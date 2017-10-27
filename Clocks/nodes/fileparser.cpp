@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 
+#include "cluster.h"
 #include "node.h"
 #include "util.h"
 #include "logger.h"
@@ -13,11 +14,13 @@ using namespace std;
 /*
  * Parse a space seperate line.
  */
-int parse_line(stringstream &ss, char *f)
+int parse_line(stringstream &ss, char *fi, cluster_config_t *cc)
 {
 	string s;
 	int i = 0;
-
+	node_config_t *nc = new node_config_t;
+	if(nc == NULL)
+		return -ENOMEM;
 	/* Parse a single line */
 	while(getline(ss, s, ' ')) {
 		i++;
@@ -27,13 +30,11 @@ int parse_line(stringstream &ss, char *f)
 				cr_log << "cluster config corrupted" << endl;
 				return -EINVAL;
 			}
-
-			cout << "id:" << stol(s, NULL) << "\n";
+			nc->nc_id = stol(s, NULL);
 			break;
 
 			case 2:
-
-			cout << "ip:" << s << "\n";
+			nc->nc_ip_addr = s;
 			break;
 
 			case 3:
@@ -41,7 +42,7 @@ int parse_line(stringstream &ss, char *f)
 				cr_log << "cluster config corrupted" << endl;
 				return -EINVAL;
 			}
-			cout << "port no:" << stol(s, NULL) << "\n";
+			nc->nc_port_num = stol(s, NULL);
 			break;
 
 			default:
@@ -51,6 +52,7 @@ int parse_line(stringstream &ss, char *f)
 		}
 	}
 
+	insert_node_config(cc, nc);
 	return 0;
 }
 
@@ -58,7 +60,7 @@ int parse_line(stringstream &ss, char *f)
  * Parse a file line by line.
  * Each line is a cluster participant.
  */
-int load_cluster(int id, char *config)
+int load_cluster(int id, char *config, cluster_config_t *cc)
 {
 	int      rc;
 	ifstream fs;
@@ -70,7 +72,7 @@ int load_cluster(int id, char *config)
 		cr_log << "Unable to open file:" << config << ":" << rc <<endl; 
 		return rc;
 	}
-
+	
 	/* Read line */
 	while(getline(fs, line)) {
 		if(fs.bad()) {
@@ -80,7 +82,7 @@ int load_cluster(int id, char *config)
 			return rc;
 		}
 		stringstream ss(line);
-		parse_line(ss, config);
+		parse_line(ss, config, cc);
 	}
 	
 	if(fs.eof()) {
@@ -88,5 +90,6 @@ int load_cluster(int id, char *config)
 	}
 
 	fs.close();
+	elect_coordinator(cc);
 	return 0;
 }

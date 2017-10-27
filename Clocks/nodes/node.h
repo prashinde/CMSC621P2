@@ -15,5 +15,4 @@
 #include "logger.h"
 using namespace std;
 
-int load_cluster(int id, char *config);
 #endif
