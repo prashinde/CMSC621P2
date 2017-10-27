@@ -1,0 +1,5 @@
+cscope*
+ctags*
+tags*
+*.o
+bin/*
