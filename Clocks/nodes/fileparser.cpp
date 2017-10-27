@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "cluster.h"
-#include "node.h"
 #include "util.h"
 #include "logger.h"
 using namespace std;

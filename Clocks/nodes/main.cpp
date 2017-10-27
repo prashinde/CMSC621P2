@@ -71,9 +71,6 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	cout << "-------------------------------------------\n";
-	cout << "Everyone elected:" << (cc_get_daemon(cc))->nc_id << "\n";
-	cout << "-------------------------------------------\n";
 	delete self;
 	delete cc;
 	return 0;
