@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+	
 	node_status_t *ns = new node_status_t;
 	if(ns == NULL) {
 		delete self;
@@ -79,6 +80,25 @@ int main(int argc, char *argv[])
 		return -ENOMEM;
 	}
 
+	if(isdaemon == 1) {
+		berkley_t *bmt = new berkley_t;
+		if(bmt == NULL) {
+			cr_log << "Out of memory" << endl;
+			delete cc;
+			return -ENOMEM;
+		}
+
+		list<node_config_t *> ll = get_list(cc);
+		bmt->b_procs = ll.size();
+		bmt->b_times = new unsigned long [ll.size()+1];
+		if(bmt->b_times == NULL) {
+			delete cc;
+			return -ENOMEM;
+		}
+		ns->ns_berk = bmt;
+	}
+
+	self->nc_clock = iclock;
 	ns->ns_isdmon = ((isdaemon == 1) ? true : false); 
 	ns->ns_state = OFF;
 	ns->ns_self = self;
@@ -87,6 +107,14 @@ int main(int argc, char *argv[])
 	/* Start node's state machine. */
 	START_STATE_MC(ns);
 
+	/* ONLY Time daemon kiks the protocol */
+	if(ns->ns_isdmon) {
+		cr_log << "Kick started the protocol.." << endl;
+		BERKELY_SYNC(ns);
+	}
+	/* ALL OTHER SHOULD WAIT FOR PROT TO COMPLETE */
+	while(ns->ns_state != MULT)
+		;
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete self;

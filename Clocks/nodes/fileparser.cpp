@@ -50,7 +50,7 @@ int parse_line(stringstream &ss, char *fi, cluster_config_t *cc)
 			break;
 		}
 	}
-
+	nc->nc_status = NOT_CONNECTED;
 	insert_node_config(cc, nc);
 	return 0;
 }

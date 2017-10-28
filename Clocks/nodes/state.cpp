@@ -70,9 +70,6 @@ static void *listener(void *ctx)
 	listen_loop(ss, ns);
 }
 
-static void WAIT_MC()
-{
-}
 
 static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 {
@@ -105,7 +102,7 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 			return ;
 		}
 		wi += step;
-		cout << "Trying to connect.." << boss->nc_ip_addr << " " << boss->nc_port_num << endl;
+		cr_log << "Trying to connect.." << boss->nc_ip_addr << " " << boss->nc_port_num << endl;
 		cr_log << "Socket not connected... retrying to connect in :" << wi << "seconds" << " self:" << self->nc_id << endl;
 		usleep(wi);
 		retry_t--;
@@ -134,12 +131,39 @@ static void CONNECT_TO_BOSSES(node_status_t *ns)
 	
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
-		if(self->nc_id >= (*it)->nc_id)
+		if(self->nc_id > (*it)->nc_id)
 			continue;
 		connect_to_one_boss(ns, *it);
-		cout << "\n";
 	}
 
+}
+
+static void WAIT_MC(cluster_config_t *cc, int self)
+{
+	list<node_config_t *> ll = get_list(cc);
+	list<node_config_t*>::iterator it;
+	for(it = ll.begin(); it != ll.end(); ++it) {
+		if((*it)->nc_id == self)
+			continue;
+		while((*it)->nc_status != CONNECTED)
+			;
+	}
+
+}
+
+static void print_node_status(cluster_config_t *cc)
+{
+	list<node_config_t *> ll = get_list(cc);
+	
+	list<node_config_t*>::iterator it;
+	for(it = ll.begin(); it != ll.end(); ++it) {
+		cr_log << "id:" << (*it)->nc_id << "\n";
+		cr_log << "ip_addr:" << (*it)->nc_ip_addr << "\n";
+		cr_log << "port num:" << (*it)->nc_port_num << "\n";
+		cr_log << "Connection:" << (*it)->nc_status << "\n";
+		cr_log << "-------------------------------------------\n";
+		cr_log << "\n";
+	}
 }
 
 void START_STATE_MC(node_status_t *ns)
@@ -155,10 +179,14 @@ void START_STATE_MC(node_status_t *ns)
 	 * OR connect to every process that is bigger than you.
 	 **/
 	if(ns->ns_isdmon) {
-		WAIT_MC();
+		WAIT_MC(ns->ns_cc, ns->ns_self->nc_id);
 	} else {
 		CONNECT_TO_BOSSES(ns);
+		WAIT_MC(ns->ns_cc, ns->ns_self->nc_id);
 	}
-
-	server_thread.join();
+	/* All connections are setup. We are ready for clock sync. */
+	ns->ns_state = CLK_SYNC_READY;
+	cr_log << "****************STATE of Process " << ns->ns_self->nc_id << "is in sync.." << endl;
+	//print_node_status(ns->ns_cc);
+	server_thread.detach();
 }

@@ -47,19 +47,27 @@ typedef struct cluster_config {
  *
  * STATE MACHINE: TIME DAEMON
  *
- * OFF------->ON------->WAIT---->CLOCK_SYN_START
+ * OFF------->ON------->WAIT---->CLK_SYNC_READY
  *           /|\                    |
  *            |                     |
- *            |                     |
- *     CLK_SYN_UPDATE<--------------                           
+ *            |                    \|/
+ *     CLK_SYN_UPDATE<----------CLK_SYNC_START                           
  * */
 
 enum node_states {
 	OFF,
 	ON,
-	CLK_SYN_START,
-	CLK_SYN_UPDATE
+	CLK_SYNC_READY,
+	CLK_SYNC_START,
+	CLK_SYN_UPDATE,
+	MULT
 };
+
+typedef struct berkley {
+	mutex          b_mx;
+	unsigned long *b_times;
+	unsigned int   b_procs;
+} berkley_t;
 
 typedef struct node_status {
 	bool              ns_isdmon;
@@ -67,6 +75,7 @@ typedef struct node_status {
 	node_config_t    *ns_self;
 	c_sock            ns_server;
 	cluster_config_t *ns_cc;
+	berkley_t        *ns_berk;
 } node_status_t;
 
 typedef struct node_con_ctx {
@@ -80,4 +89,8 @@ list<node_config_t *> get_list(cluster_config_t *cc);
 void elect_coordinator(cluster_config_t *cc);
 node_config_t *cc_get_daemon(cluster_config_t *cc);
 int load_cluster(int id, char *configi, cluster_config_t *cc);
+
+void BERKELY_SYNC(node_status_t *ns);
+void clock_sync_recieved(node_status_t *ns);
+void berkley_clk_sync_rep(node_status_t *ns, int id, unsigned long clock);
 #endif

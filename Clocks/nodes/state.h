@@ -3,6 +3,7 @@
 
 #include "cluster.h"
 
+
 void START_STATE_MC(node_status_t *ns);
 
 #endif
