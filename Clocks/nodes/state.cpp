@@ -123,6 +123,11 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 	send_hello_message(boss->nc_id, ns);
 }
 
+static void CONNECT_TO_SELF(node_status_t *ns)
+{
+	connect_to_one_boss(ns, ns->ns_self);
+}
+
 static void CONNECT_TO_BOSSES(node_status_t *ns)
 {
 	node_config_t *self = ns->ns_self;
@@ -143,8 +148,6 @@ static void WAIT_MC(cluster_config_t *cc, int self)
 	list<node_config_t *> ll = get_list(cc);
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
-		if((*it)->nc_id == self)
-			continue;
 		while((*it)->nc_status != CONNECTED)
 			;
 	}
@@ -179,6 +182,7 @@ void START_STATE_MC(node_status_t *ns)
 	 * OR connect to every process that is bigger than you.
 	 **/
 	if(ns->ns_isdmon) {
+		CONNECT_TO_SELF(ns);
 		WAIT_MC(ns->ns_cc, ns->ns_self->nc_id);
 	} else {
 		CONNECT_TO_BOSSES(ns);

@@ -115,6 +115,10 @@ int main(int argc, char *argv[])
 	/* ALL OTHER SHOULD WAIT FOR PROT TO COMPLETE */
 	while(ns->ns_state != MULT)
 		;
+
+	/*****************************************/
+	cr_log << "***ID:" << self->nc_id << " Logical Clock:" << self->nc_clock << endl;
+	/*****************************************/
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete self;

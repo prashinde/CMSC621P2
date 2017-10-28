@@ -93,4 +93,5 @@ int load_cluster(int id, char *configi, cluster_config_t *cc);
 void BERKELY_SYNC(node_status_t *ns);
 void clock_sync_recieved(node_status_t *ns);
 void berkley_clk_sync_rep(node_status_t *ns, int id, unsigned long clock);
+void berkley_adjust_clock(node_status_t *ns, double adjust);
 #endif

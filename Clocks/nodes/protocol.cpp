@@ -1,5 +1,10 @@
 #include "protocol.h"
 
+static void process_update_clk(c_sock *cs, node_status_t *ns, update_clk_t msg)
+{
+	berkley_adjust_clock(ns, msg.adjust);
+}
+
 void send_update_time(node_status_t *ns, int id, double adjust)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -157,12 +162,18 @@ bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg)
 			rc = false;
 		}
 		break;
+
 		case SEND_CLK:
 		process_clk_sync_start(cs, ns, msg);
 		break;
 		case SEND_CLK_REP:
 		process_clk_sync_rep(cs, ns, msg->u.M_u_srt);
 		break;
+		
+		case UPDATE_CLK:
+		process_update_clk(cs, ns, msg->u.M_u_uct);
+		break;
+
 		default:
 		cr_log << "Impossible:" << msg->M_type << endl;
 		break;
