@@ -16,18 +16,14 @@ class c_sock {
 	struct sockaddr_in cli_addr;
 	socklen_t addrlen;
 	int sock;
-	int cl_sock;
 public:
-	int get_cl_sock() { return this->cl_sock; };
-	int c_sock_addr(char *ip, int port);
+	int c_sock_addr(string ip, int port);
 	int c_sock_connect();
 	int c_sock_bind();
 	int c_sock_listen();
-	int c_sock_accept();
+	c_sock* c_sock_accept();
 	ssize_t c_sock_read(void *buffer, size_t len);
 	ssize_t c_sock_write(void *buffer, size_t len);
-	ssize_t c_sock_read(int fd, void *buffer, size_t len);
-	ssize_t c_sock_write(int fd, void *buffer, size_t len);
 	void c_sock_close();
 };
 #endif

@@ -7,6 +7,7 @@
 #include "cluster.h"
 #include "util.h"
 #include "logger.h"
+#include "state.h"
 
 using namespace std;
 
@@ -71,6 +72,23 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
+	node_status_t *ns = new node_status_t;
+	if(ns == NULL) {
+		delete self;
+		delete cc;
+		return -ENOMEM;
+	}
+
+	ns->ns_isdmon = ((isdaemon == 1) ? true : false); 
+	ns->ns_state = OFF;
+	ns->ns_self = self;
+	ns->ns_cc = cc;
+
+	/* Start node's state machine. */
+	START_STATE_MC(ns);
+
+	/* We will be back here when state machine reaches OFF state */
+	delete ns;
 	delete self;
 	delete cc;
 	return 0;
