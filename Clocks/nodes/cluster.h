@@ -17,11 +17,18 @@
 #include "logger.h"
 using namespace std;
 
+enum conn_stat {
+	NOT_CONNECTED,
+	CONNECTED
+};
+
 typedef struct node_config {
-	int           nc_id;
-	int           nc_port_num;
-	string        nc_ip_addr;
-	unsigned long nc_clock;
+	int            nc_id;
+	enum conn_stat nc_status;
+	int            nc_port_num;
+	string         nc_ip_addr;
+	c_sock        *nc_sock;
+	unsigned long  nc_clock;
 } node_config_t;
 
 typedef struct cluster_config {
@@ -40,11 +47,11 @@ typedef struct cluster_config {
  *
  * STATE MACHINE: TIME DAEMON
  *
- * OFF------->ON--------->CLOCK_SYN_START
- *           /|\             |
- *            |              |
- *            |              |
- *     CLK_SYN_UPDATE<-------                           
+ * OFF------->ON------->WAIT---->CLOCK_SYN_START
+ *           /|\                    |
+ *            |                     |
+ *            |                     |
+ *     CLK_SYN_UPDATE<--------------                           
  * */
 
 enum node_states {
