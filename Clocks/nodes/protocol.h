@@ -17,7 +17,7 @@ typedef struct MESSAGE {
 	unsigned long M_seq_no;
         enum msg_type M_type;
 	union {
-		hello_t *M_u_h;
+		hello_t M_u_h;
 	} u;
 } msg_t;
 bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg);

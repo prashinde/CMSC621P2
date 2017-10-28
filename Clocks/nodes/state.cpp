@@ -21,6 +21,7 @@ static void *incoming(void *ctx)
 
 static void listen_loop(c_sock *ss, node_status_t *ns)
 {
+	ns->ns_state = ON; 
 	while(1) {
 		c_sock *cs = ss->c_sock_accept();
 		if(cs == NULL) {
@@ -67,7 +68,6 @@ static void *listener(void *ctx)
 	}
 	ss->c_sock_listen();
 	listen_loop(ss, ns);
-	ns->ns_state = ON; 
 }
 
 static void WAIT_MC()
@@ -88,15 +88,27 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 	rc = bs->c_sock_addr(boss->nc_ip_addr, boss->nc_port_num);
 	if(rc != 0) {
 		cr_log << "Invalid Addresses" << endl;
-		delete ns;
+		delete bs;
 		return ;
 	}
 
-	rc = bs->c_sock_connect();
-	if(rc != 0) {
-		cr_log << "Socket not connected:" << errno << endl;
-		delete ns;
-		return ;
+	int retry_t = 10;
+	unsigned long step = 1000;
+	unsigned long wi = 1000;
+	while(1) {
+		rc = bs->c_sock_connect();
+		if(rc == 0)
+			break;
+		if(retry_t == 0) {
+			cr_log << "Socket not connected:" << errno << endl;
+			delete bs;
+			return ;
+		}
+		wi += step;
+		cout << "Trying to connect.." << boss->nc_ip_addr << " " << boss->nc_port_num << endl;
+		cr_log << "Socket not connected... retrying to connect in :" << wi << "seconds" << " self:" << self->nc_id << endl;
+		usleep(wi);
+		retry_t--;
 	}
 
 	boss->nc_sock = bs;
