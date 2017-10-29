@@ -69,6 +69,12 @@ typedef struct berkley {
 	unsigned int   b_procs;
 } berkley_t;
 
+typedef struct causal {
+	mutex          c_mx;
+	unsigned long  c_v_size;
+	unsigned long  c_V[100];
+} causal_t;
+
 typedef struct node_status {
 	bool              ns_isdmon;
 	enum node_states  ns_state;
@@ -76,6 +82,7 @@ typedef struct node_status {
 	c_sock            ns_server;
 	cluster_config_t *ns_cc;
 	berkley_t        *ns_berk;
+	causal_t         *ns_causal;
 } node_status_t;
 
 typedef struct node_con_ctx {

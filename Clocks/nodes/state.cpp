@@ -5,7 +5,7 @@
 
 static void *incoming(void *ctx)
 {
-	/* Send and Recieve */
+	/* Recieve */
 	bool cont = true;
 	node_con_ctx_t *ctxt = (node_con_ctx_t *)ctx;
 	c_sock *cs = ctxt->ncc_cs;
@@ -102,8 +102,8 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 			return ;
 		}
 		wi += step;
-		cr_log << "Trying to connect.." << boss->nc_ip_addr << " " << boss->nc_port_num << endl;
-		cr_log << "Socket not connected... retrying to connect in :" << wi << "seconds" << " self:" << self->nc_id << endl;
+		//cr_log << "Trying to connect.." << boss->nc_ip_addr << " " << boss->nc_port_num << endl;
+		//cr_log << "Socket not connected... retrying to connect in :" << wi << "seconds" << " self:" << self->nc_id << endl;
 		usleep(wi);
 		retry_t--;
 	}
@@ -190,7 +190,7 @@ void START_STATE_MC(node_status_t *ns)
 	}
 	/* All connections are setup. We are ready for clock sync. */
 	ns->ns_state = CLK_SYNC_READY;
-	cr_log << "****************STATE of Process " << ns->ns_self->nc_id << "is in sync.." << endl;
+	//cr_log << "****************STATE of Process " << ns->ns_self->nc_id << "is in sync.." << endl;
 	//print_node_status(ns->ns_cc);
 	server_thread.detach();
 }

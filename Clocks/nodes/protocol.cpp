@@ -1,5 +1,36 @@
 #include "protocol.h"
 
+void process_multicast_message(c_sock *cs, node_status_t *ns, mult_t msg)
+{
+
+}
+
+void send_mult_msg(node_status_t *ns)
+{
+	cluster_config_t *cc = ns->ns_cc;
+	node_config_t *node;
+	list<node_config_t *> ll = get_list(cc);	
+
+	msg_t *msg = new msg_t;
+	msg->M_type = MULTICAST;
+
+	mult_t mul;
+
+	for(int i = 1; i <= ns->ns_causal->c_v_size; i++)
+		mul.vec[i] = ns->ns_causal->c_V[i];
+
+	msg->u.M_u_mult = mul;
+	list<node_config_t*>::iterator it;
+	for(it = ll.begin(); it != ll.end(); ++it) {
+		c_sock *c_wr = (*it)->nc_sock;
+		ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
+		if(ret < 0) {
+			cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
+		}
+	}
+
+}
+
 static void process_update_clk(c_sock *cs, node_status_t *ns, update_clk_t msg)
 {
 	berkley_adjust_clock(ns, msg.adjust);
@@ -174,6 +205,10 @@ bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg)
 		process_update_clk(cs, ns, msg->u.M_u_uct);
 		break;
 
+		case MULT:
+		/* TODO: Ignore messages during clock sync. */
+		process_multicast_message(cs, ns, msg->u.M_u_mult);
+		break;
 		default:
 		cr_log << "Impossible:" << msg->M_type << endl;
 		break;
