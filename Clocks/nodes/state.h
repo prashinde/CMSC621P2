@@ -5,5 +5,5 @@
 
 
 void START_STATE_MC(node_status_t *ns);
-
+void WAIT_MULT_READY(node_status_t *ns);
 #endif

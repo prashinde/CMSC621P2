@@ -110,19 +110,24 @@ int main(int argc, char *argv[])
 
 	/* ONLY Time daemon kiks the protocol */
 	if(ns->ns_isdmon) {
-		cr_log << "Kick started the protocol.." << endl;
+		//cr_log << "Kick started the protocol.." << endl;
 		BERKELY_SYNC(ns);
 	}
 	/* ALL OTHER SHOULD WAIT FOR PROT TO COMPLETE */
-	while(ns->ns_state != MULT)
-		;
+	WAIT_MULT_READY(ns);
 	/*****************************************/
 	cr_log << "***ID:" << self->nc_id << " Logical Clock:" << self->nc_clock << endl;
 	/*****************************************/
 
 	multicast_init_vector(ns);
-	multicast(ns);
 
+	srand(time(NULL));
+	for(int i = 0; i < 10; i++) {
+		multicast(ns);
+		usleep(1000+(rand()%1000));
+	}
+
+	usleep(3000000);
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete self;

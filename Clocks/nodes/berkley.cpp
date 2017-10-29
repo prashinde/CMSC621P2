@@ -31,7 +31,6 @@ static void run_computations(node_status_t *ns)
 	unsigned long sum = 0;
 	double avg_t;
 
-	cr_log << " About to run comps...:" << ll.size() << endl;
 	bmt->b_times[ns->ns_self->nc_id] = ns->ns_self->nc_clock; 
 	for(int i = 1; i <= ll.size(); i++) {
 		sum += bmt->b_times[i];
@@ -54,16 +53,15 @@ void berkley_clk_sync_rep(node_status_t *ns, int id, unsigned long clock)
 	/* 1 because daemon does not get a response from itself. */
 	if(bmt->b_procs == 1) {
 		lck.unlock();
-		cr_log << " Going to run comps..." << endl;
 		/* send messages */
 		run_computations(ns);
 		return ;
 	}
-	cr_log << " Processes:" << bmt->b_procs << endl;
 	lck.unlock();
 }
 void berkley_adjust_clock(node_status_t *ns, double adjust)
 {
 	ns->ns_self->nc_clock += adjust;
-	ns->ns_state = MULT;
+	//ns->ns_state = MULT;
+	send_mult_ready(ns);
 }

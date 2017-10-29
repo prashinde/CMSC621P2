@@ -154,6 +154,19 @@ static void WAIT_MC(cluster_config_t *cc, int self)
 
 }
 
+void WAIT_MULT_READY(node_status_t *ns)
+{
+	list<node_config_t *> ll = get_list(ns->ns_cc);
+	list<node_config_t*>::iterator it;
+	for(it = ll.begin(); it != ll.end(); ++it) {
+		while((*it)->nc_status != READY_MULTICAST)
+			;
+	}
+
+	cout << "Node:" << ns->ns_self->nc_id << " enters READY_MULTICAST" << endl;
+	ns->ns_state = ACCEPT_MULTICAST;
+}
+
 static void print_node_status(cluster_config_t *cc)
 {
 	list<node_config_t *> ll = get_list(cc);

@@ -19,7 +19,8 @@ using namespace std;
 
 enum conn_stat {
 	NOT_CONNECTED,
-	CONNECTED
+	CONNECTED,
+	READY_MULTICAST
 };
 
 typedef struct node_config {
@@ -60,7 +61,7 @@ enum node_states {
 	CLK_SYNC_READY,
 	CLK_SYNC_START,
 	CLK_SYN_UPDATE,
-	MULT
+	ACCEPT_MULTICAST
 };
 
 typedef struct berkley {
