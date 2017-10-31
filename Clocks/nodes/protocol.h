@@ -4,7 +4,7 @@
 #include "multicast.h"
 #include "state.h"
 enum msg_type {
-	HELLO,
+	HELLO = 1,
 	SEND_CLK,
 	SEND_CLK_REP,
 	UPDATE_CLK,

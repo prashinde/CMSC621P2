@@ -10,12 +10,15 @@ static void *incoming(void *ctx)
 	node_con_ctx_t *ctxt = (node_con_ctx_t *)ctx;
 	c_sock *cs = ctxt->ncc_cs;
 	node_status_t *ns = ctxt->ncc_ns;
+	ssize_t rcv = 0;
 
 	while(cont) {
 		msg_t *msg = new msg_t;
-		cs->c_sock_read(msg, sizeof(msg_t));		
+		rcv = 0;
+		rcv = cs->c_sock_read(msg, sizeof(msg_t));
 		cont = process_msg(cs, ns, msg);
 	}
+	cs->c_sock_close();
 	return NULL;
 }
 
@@ -149,7 +152,7 @@ static void WAIT_MC(cluster_config_t *cc, int self)
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
 		while((*it)->nc_status != CONNECTED)
-			;
+			usleep(1000);
 	}
 
 }
@@ -160,7 +163,7 @@ void WAIT_MULT_READY(node_status_t *ns)
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
 		while((*it)->nc_status != READY_MULTICAST)
-			;
+			usleep(1000);
 	}
 
 	cout << "Node:" << ns->ns_self->nc_id << " enters READY_MULTICAST" << endl;

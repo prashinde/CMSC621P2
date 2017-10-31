@@ -62,6 +62,6 @@ void berkley_clk_sync_rep(node_status_t *ns, int id, unsigned long clock)
 void berkley_adjust_clock(node_status_t *ns, double adjust)
 {
 	ns->ns_self->nc_clock += adjust;
-	//ns->ns_state = MULT;
+	cr_log << "Sending multicast ready message:" << endl;
 	send_mult_ready(ns);
 }

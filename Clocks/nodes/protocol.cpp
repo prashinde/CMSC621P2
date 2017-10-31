@@ -12,6 +12,7 @@ void send_mult_msg(node_status_t *ns)
 	list<node_config_t *> ll = get_list(cc);	
 
 	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
 	msg->M_type = MULTICAST;
 
 	mult_t mul;
@@ -44,6 +45,7 @@ void send_mult_ready(node_status_t *ns)
 	list<node_config_t *> ll = get_list(cc);	
 
 	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
 	msg->M_type = MULTICAST_RD;
 
 	mult_ready_t mrt;
@@ -72,6 +74,7 @@ void send_update_time(node_status_t *ns, int id, double adjust)
 	node_config_t *node;
 
 	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
 	msg->M_type = UPDATE_CLK;
 
 	update_clk_t uct;
@@ -108,6 +111,7 @@ void send_time(node_status_t *ns, int dmon)
 	node_config_t *node;
 
 	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
 	msg->M_type = SEND_CLK_REP;
 
 	sync_reply_t srt;
@@ -144,6 +148,7 @@ void send_sync_message(node_status_t *ns, int id)
 	node_config_t *client;
 
 	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
 	msg->M_type = SEND_CLK;
 
 	client = cc_get_record(id, cc);
@@ -175,20 +180,28 @@ void send_hello_message(int id, node_status_t *ns)
 	/* Handle failure */
 
 	h.h_id = ns->ns_self->nc_id;
+
+	msg->M_seq_no = 0;
 	msg->M_type = HELLO;
 	msg->u.M_u_h = h;
 
 	boss = cc_get_record(id, cc);
 	if(boss == NULL) {
 		cr_log << " Invalid configuration close connection.";
+		delete msg;
 		return ;
 	}
 
 	if(boss->nc_status != CONNECTED) {
 		cr_log << "BOSS not connected.";
+		delete msg;
+		return ;
 	}
 
+	cout << "SEnding hello message from : " << h.h_id << " to:" << id << endl;
 	c_sock *c_wr = boss->nc_sock;
+
+	//cout << "Size of msg:" << sizeof(msg_t) << " :" << sizeof *msg << endl;
 	ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
 	if(ret < 0) {
 		cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
@@ -202,11 +215,11 @@ static int process_hello_message(c_sock *cs, node_status_t *ns, hello_t msg)
 	
 	connected_nc = cc_get_record(msg.h_id, cc);
 	if(connected_nc == NULL) {
-		cr_log << " Invalid configuration close connection.";
+		cr_log << "Unable to find valid conf for node:"<< msg.h_id << endl;
 		return -EINVAL;
 	}
 
-	//cr_log << "Recieved hellow from " << msg.h_id << "to " << ns->ns_self->nc_id << endl;
+	cr_log << "Recieved hello from " << msg.h_id << "to " << ns->ns_self->nc_id << endl;
 	connected_nc->nc_status = CONNECTED;
 	connected_nc->nc_sock = cs;
 	return 0;
@@ -245,6 +258,8 @@ bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg)
 		break;
 
 		default:
+		/* Break the protocol and I will stop talkong to you! */
+		rc = false;
 		cr_log << "Impossible:" << msg->M_type << endl;
 		break;
 	}

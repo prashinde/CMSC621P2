@@ -77,7 +77,16 @@ c_sock *c_sock :: c_sock_accept()
 
 ssize_t c_sock::c_sock_read(void *buffer, size_t len)
 {
-	return recv(this->sock, buffer, len, 0);
+	ssize_t rcv = 0;
+	ssize_t rc = 0;
+	while(len > 0) {
+		rcv = recv(this->sock, buffer, len, 0);
+		buffer = ((char*)buffer)+rcv;
+		len = len - rcv;
+		rc += rcv;
+	}
+
+	return rc;
 }
 
 ssize_t c_sock::c_sock_write(void *buffer, size_t len)

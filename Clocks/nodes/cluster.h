@@ -70,10 +70,17 @@ typedef struct berkley {
 	unsigned int   b_procs;
 } berkley_t;
 
+typedef struct buffered_multicast {
+	int bm_id;
+	bool bm_dl;
+	unsigned long *bm_V;
+} buffer_m_t;
+
 typedef struct causal {
 	mutex          c_mx;
 	unsigned long  c_v_size;
 	unsigned long  c_V[100];
+	list<buffer_m_t *> c_buffer;
 } causal_t;
 
 typedef struct node_status {

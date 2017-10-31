@@ -73,7 +73,8 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	
+	cout << "On node:" << self->nc_id << endl;
+	print_cluster_config(cc);
 	node_status_t *ns = new node_status_t;
 	if(ns == NULL) {
 		delete self;
