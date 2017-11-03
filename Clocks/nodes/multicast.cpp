@@ -98,9 +98,9 @@ void deliver_buffered_messages(node_status_t *ns)
 			print_v((*it)->bm_V, ct->c_V, ct->c_v_size);
 			delete (*it)->bm_V;
 			(*it)->bm_dl = true;
-			//it = ll.erase(it);		
-		}
-		it++;
+			it = (ct->c_buffer).erase(it);		
+		} else
+			it++;
 	}
 }
 
@@ -118,8 +118,7 @@ void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id)
 	if(deliver) {
 		//cr_log << "Deliver a message: On Node:" << ns->ns_self->nc_id << "from " << id << endl;
 		cr_log << "D:";
-		if(ct->c_V[id] < msg[id])
-			ct->c_V[id] = msg[id];
+		ct->c_V[id] = msg[id];
 		print_v(msg, ct->c_V, ct->c_v_size);
 		deliver_buffered_messages(ns);
 	} else {

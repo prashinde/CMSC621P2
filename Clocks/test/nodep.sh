@@ -1,8 +1,8 @@
 #!/bin/bash
-tdaemon=3
+tdaemon=4
 VALGRIND=
 #VALGRIND="valgrind --track-origins=yes --log-file="valg""
-for i in {1..3} 
+for i in {1..4} 
 do
 	if [ $i -eq $tdaemon ]
 	then

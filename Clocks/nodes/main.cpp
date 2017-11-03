@@ -13,6 +13,17 @@
 
 using namespace std;
 
+void multicast_final_print(node_status_t *ns)
+{
+	causal_t *ct = ns->ns_causal;
+	while(ct->c_count != 300)
+		usleep(1000000);
+
+	for(int i = 1; i <= ct->c_v_size; i++)
+		cout << " " << ct->c_V[i] << endl;
+	cout << endl;
+}
+
 void print_cluster_config(cluster_config_t *cc)
 {
 	list<node_config_t *> ll = get_list(cc);
@@ -134,11 +145,14 @@ int main(int argc, char *argv[])
 	multicast_init_vector(ns);
 
 	srand(time(NULL));
-	for(int i = 0; i < 70; i++) {
+	for(int i = 0; i < 100; i++) {
 		multicast(ns);
 		usleep(1000+(rand()%1000));
 	}
 
+	cout << "------------------------------------------------" << endl;
+	multicast_final_print(ns);
+	cout << endl;
 #if 0
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
