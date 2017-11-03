@@ -45,7 +45,7 @@ void multicast(node_status_t *ns)
 
 static void print_v(unsigned long msg[10], unsigned long self[10], int size)
 {
-	cr_log << "[";
+	cout << "[";
 	for(int i = 1; i <= size; i++) {
 		cout << self[i] << " ";
 	}
@@ -58,6 +58,26 @@ static void print_v(unsigned long msg[10], unsigned long self[10], int size)
 	cout << "] " << endl;
 }
 
+bool is_fifo(unsigned long local[10], unsigned long msg[10], int id, int size)
+{
+	return (local[id] + 1) == msg[id];
+}
+
+bool is_causal(unsigned long local[10], int self, unsigned long msg[10], int id, int size)
+{
+	bool deliver = true;
+	for(int i = 1; i <= size; i++) {
+		if(i == id || i == self)
+			continue;
+
+		if(msg[i] > local[i]) {
+			deliver = false;
+			break;
+		}
+	}
+	return deliver;
+}
+
 void deliver_buffered_messages(node_status_t *ns)
 {
 	causal_t *ct = ns->ns_causal;
@@ -68,21 +88,15 @@ void deliver_buffered_messages(node_status_t *ns)
 		return ;
 
 	for(it = (ct->c_buffer).begin(); it != (ct->c_buffer).end(); ) {
-		deliver = true;
-		for(int i = 1; i <= ct->c_v_size; i++) {
-			if(i == (*it)->bm_id)
-				continue;
-			if((*it)->bm_dl)
-				continue;
-			if((*it)->bm_V[i] > ct->c_V[i]) {
-				deliver = false;
-				break;
-			}
-		}
-
+		deliver = is_fifo(ct->c_V, (*it)->bm_V, (*it)->bm_id, ct->c_v_size) && 
+			  is_causal(ct->c_V, ns->ns_self->nc_id, (*it)->bm_V, (*it)->bm_id, ct->c_v_size);
 		if(deliver) {
-			cout << "Buffer Message delivered:";
+			int id = (*it)->bm_id;
+			cout << "D:";
+			if(ct->c_V[id] < (*it)->bm_V[id])
+				ct->c_V[id] = (*it)->bm_V[id];
 			print_v((*it)->bm_V, ct->c_V, ct->c_v_size);
+			delete (*it)->bm_V;
 			(*it)->bm_dl = true;
 			//it = ll.erase(it);		
 		}
@@ -97,33 +111,30 @@ void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id)
 //	cout << "Locking the mcast mutex" << endl;
 	pthread_mutex_lock(&ct->c_mx);
 	ct->c_count++;
-	for(int i = 1; i <= ct->c_v_size; i++) {
-		if(i == id)
-			continue;
-		if(msg[i] > ct->c_V[i]) {
-			deliver = false;
-			break;
-		}
-	}
-	//cout << "From: " << id << " Multicast count: " << ct->c_count << endl;
+
+	deliver = is_fifo(ct->c_V, msg, id, ct->c_v_size) && 
+		  is_causal(ct->c_V, ns->ns_self->nc_id, msg, id, ct->c_v_size);
 
 	if(deliver) {
-		cr_log << "Deliver a message: On Node:" << ns->ns_self->nc_id << "from " << id << endl;
-		ct->c_V[id] = msg[id];
+		//cr_log << "Deliver a message: On Node:" << ns->ns_self->nc_id << "from " << id << endl;
+		cr_log << "D:";
+		if(ct->c_V[id] < msg[id])
+			ct->c_V[id] = msg[id];
 		print_v(msg, ct->c_V, ct->c_v_size);
-		//deliver_buffered_messages(ns);
+		deliver_buffered_messages(ns);
 	} else {
-		cr_log << "Buffer a message:" << endl;
-		//print_v(msg, ct->c_V, ct->c_v_size);
+		//cr_log << "Buffer a message: from Node: "<< id << endl;
+		cr_log << "B:";
+		print_v(msg, ct->c_V, ct->c_v_size);
 
-		/*buffer_m_t *mcast = new buffer_m_t;
+		buffer_m_t *mcast = new buffer_m_t;
 		mcast->bm_id = id;
 		mcast->bm_V = new unsigned long[(ct->c_v_size)+1];
 
 		for(int i = 1; i <= ct->c_v_size; i++)
 			mcast->bm_V[i] = msg[i];
 		mcast->bm_dl = false;
-		(ct->c_buffer).push_back(mcast);*/
+		(ct->c_buffer).push_back(mcast);
 	}
 	pthread_mutex_unlock(&ct->c_mx);
 //	cout << "Unlocking the mcast mutex" << endl;

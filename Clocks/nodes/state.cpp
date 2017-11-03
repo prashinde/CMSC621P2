@@ -21,7 +21,6 @@ static void *incoming(void *ctx)
 		}
 		rcv = 0;
 		rcv = cs->c_sock_read(msg, sizeof(msg_t));
-		usleep(1000+(rand()%1000));
 		cont = process_msg(cs, ns, msg);
 	}
 	cs->c_sock_close();

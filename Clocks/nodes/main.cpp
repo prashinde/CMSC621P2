@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 	multicast_init_vector(ns);
 
 	srand(time(NULL));
-	for(int i = 0; i < 15; i++) {
+	for(int i = 0; i < 70; i++) {
 		multicast(ns);
 		usleep(1000+(rand()%1000));
 	}

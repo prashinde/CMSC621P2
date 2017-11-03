@@ -2,6 +2,7 @@
 
 void process_multicast_message(c_sock *cs, node_status_t *ns, mult_t msg)
 {
+	usleep(1000+(rand()%1000));
 	mulicast_recv(ns, msg.vec, msg.m_id);
 }
 
@@ -24,7 +25,10 @@ void send_mult_msg(node_status_t *ns)
 	msg->u.M_u_mult = mul;
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
-		cout << " Sending to process:" <<(*it)->nc_id<< endl;
+		/* Do not multicast to yourself */
+		if((*it)->nc_id == ns->ns_self->nc_id)
+			continue;
+		//cout << " Sending to process:" <<(*it)->nc_id<< endl;
 		while((*it)->nc_status != READY_MULTICAST)
 			usleep(1000);
 		c_sock *c_wr = (*it)->nc_sock;
