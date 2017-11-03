@@ -28,7 +28,6 @@ void multicast_init_vector(node_status_t *ns)
 	for(int i = 1; i <= ll.size(); i++)
 		ct->c_V[i] = ns->ns_self->nc_clock;
 	
-	pthread_mutex_init(&ct->c_mx, NULL);
 	ct->c_v_size = ll.size();
 	ct->c_count = 0;
 	ns->ns_causal = ct;
@@ -37,10 +36,10 @@ void multicast_init_vector(node_status_t *ns)
 void multicast(node_status_t *ns, enum msg_ordering causality)
 {
 	causal_t *ct = ns->ns_causal;
-	pthread_mutex_lock(&ct->c_mx);
+	unique_lock<mutex> lck(ct->c_mx);
 	ct->c_V[ns->ns_self->nc_id]++;
 	send_mult_msg(ns, causality);
-	pthread_mutex_unlock(&ct->c_mx);
+	lck.unlock();
 }
 
 static void print_v(unsigned long msg[10], unsigned long self[10], int size)
@@ -111,13 +110,13 @@ void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id, enum msg_or
 //	cout << "Locking the mcast mutex" << endl;
 
 	
-	pthread_mutex_lock(&ct->c_mx);
+	unique_lock<mutex> lck(ct->c_mx);
 	ct->c_count++;
 
 	if(order == NOT_CAUSAL) {
 		print_v(msg, ct->c_V, ct->c_v_size);
 		ct->c_V[id] = msg[id];
-		pthread_mutex_unlock(&ct->c_mx);
+		lck.unlock();
 		return ;
 	}
 
@@ -144,6 +143,6 @@ void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id, enum msg_or
 		mcast->bm_dl = false;
 		(ct->c_buffer).push_back(mcast);
 	}
-	pthread_mutex_unlock(&ct->c_mx);
+	lck.unlock();
 //	cout << "Unlocking the mcast mutex" << endl;
 }

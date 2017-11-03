@@ -28,6 +28,15 @@ enum msg_ordering {
 	NOT_CAUSAL,
 };
 
+typedef struct cluster_bootstrap_param {
+	int                cbp_id;
+	char              *cbp_nodelist;
+	bool               cbp_isdaemon;
+	unsigned long      cbp_iclock;
+	enum msg_ordering  cbp_causality;
+	char              *cbp_fname;
+} cluster_boot_t;
+
 typedef struct node_config {
 	int            nc_id;
 	enum conn_stat nc_status;
@@ -83,12 +92,18 @@ typedef struct buffered_multicast {
 	unsigned long *bm_V;
 } buffer_m_t;
 
+typedef struct app_msg {
+	unsigned long bm_V[10];
+} app_msg_t;
+
 typedef struct causal {
-	long            c_count;
-	unsigned long   c_v_size;
-	unsigned long   c_V[10];
+	long               c_count;
+	unsigned long      c_v_size;
+	unsigned long      c_V[10];
 	list<buffer_m_t *> c_buffer;
-	pthread_mutex_t c_mx;
+	mutex              c_mx;
+	condition_variable c_cv;
+	queue<app_msg_t *> c_appq;
 } causal_t;
 
 enum lock_state {
@@ -137,6 +152,7 @@ typedef struct node_con_ctx {
 	node_config_t *ncc_connector;
 } node_con_ctx_t;
 
+node_status_t *bootstrap_cluster(cluster_boot_t *cbt);
 node_config_t *cc_get_record(int id, cluster_config_t *cc);
 int insert_node_config(cluster_config_t *cc, node_config_t *nc);
 list<node_config_t *> get_list(cluster_config_t *cc);
