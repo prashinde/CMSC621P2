@@ -34,12 +34,12 @@ void multicast_init_vector(node_status_t *ns)
 	ns->ns_causal = ct;
 }
 
-void multicast(node_status_t *ns)
+void multicast(node_status_t *ns, enum msg_ordering causality)
 {
 	causal_t *ct = ns->ns_causal;
 	pthread_mutex_lock(&ct->c_mx);
 	ct->c_V[ns->ns_self->nc_id]++;
-	send_mult_msg(ns);
+	send_mult_msg(ns, causality);
 	pthread_mutex_unlock(&ct->c_mx);
 }
 
@@ -104,13 +104,22 @@ void deliver_buffered_messages(node_status_t *ns)
 	}
 }
 
-void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id)
+void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id, enum msg_ordering order)
 {
 	causal_t *ct = ns->ns_causal;
 	bool deliver = true;
 //	cout << "Locking the mcast mutex" << endl;
+
+	
 	pthread_mutex_lock(&ct->c_mx);
 	ct->c_count++;
+
+	if(order == NOT_CAUSAL) {
+		print_v(msg, ct->c_V, ct->c_v_size);
+		ct->c_V[id] = msg[id];
+		pthread_mutex_unlock(&ct->c_mx);
+		return ;
+	}
 
 	deliver = is_fifo(ct->c_V, msg, id, ct->c_v_size) && 
 		  is_causal(ct->c_V, ns->ns_self->nc_id, msg, id, ct->c_v_size);

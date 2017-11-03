@@ -107,10 +107,10 @@ void send_lock_request(node_status_t *ns)
 void process_multicast_message(c_sock *cs, node_status_t *ns, mult_t msg)
 {
 	usleep(1000+(rand()%1000));
-	mulicast_recv(ns, msg.vec, msg.m_id);
+	mulicast_recv(ns, msg.vec, msg.m_id, msg.m_order);
 }
 
-void send_mult_msg(node_status_t *ns)
+void send_mult_msg(node_status_t *ns, enum msg_ordering causality)
 {
 	cluster_config_t *cc = ns->ns_cc;
 	node_config_t *node;
@@ -125,7 +125,8 @@ void send_mult_msg(node_status_t *ns)
 	for(int i = 1; i <= ns->ns_causal->c_v_size; i++)
 		mul.vec[i] = ns->ns_causal->c_V[i];
 
-	mul.m_id = ns->ns_self->nc_id;
+	mul.m_id    = ns->ns_self->nc_id;
+	mul.m_order = causality; 
 	msg->u.M_u_mult = mul;
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {

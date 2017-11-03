@@ -78,20 +78,22 @@ int main(int argc, char *argv[])
 	char         *nodelist;
 	unsigned long iclock;
 	char         *fname;
+	enum msg_ordering causality;
 
 	/* Some parameters for floating point and log */
     	ios_base::sync_with_stdio(false); 
 	setiosflags(ios::fixed);
 	setprecision(15);
 
-	if(argc != 6) {
+	if(argc != 7) {
 		cout << "usage ./node <id> <nodelist> <d> <clock>" << endl;
 		cout << "\
 			 1. id -> Node identifier\n \
 			 2. nodelist -> A file containing a list of all processes\n \
 			 3. d -> Whether a node is time-daemon\n \
 			 4. clock -> initial clock\n \
-			 5. filename -> Accesses to this file are serialized\n";
+			 5. causality -> 0/1 Messages to be ordered?\n \
+			 6. filename -> Accesses to this file are serialized\n";
 			return -EINVAL;
 	}
 
@@ -99,7 +101,8 @@ int main(int argc, char *argv[])
 	nodelist = argv[2];
 	isdaemon = atoi(argv[3]);
 	iclock = atol(argv[4]);
-	fname = argv[5];
+	causality = (atoi(argv[5]) == 1 ? CAUSAL : NOT_CAUSAL);
+	fname = argv[6];
 
 	cout << "Node " << id << "is started with clock:" << iclock << endl;	
 	cluster_config_t *cc = new cluster_config_t;
@@ -184,10 +187,10 @@ int main(int argc, char *argv[])
 	cr_log << "***ID:" << self->nc_id << " Logical Clock:" << self->nc_clock << endl;
 	/*****************************************/
 	multicast_init_vector(ns);
-#if 0
+
 	srand(time(NULL));
 	for(int i = 0; i < 100; i++) {
-		multicast(ns);
+		multicast(ns, causality);
 		usleep(1000+(rand()%1000));
 	}
 
@@ -195,9 +198,6 @@ int main(int argc, char *argv[])
 	multicast_final_print(ns);
 	cout << endl;
 
-#endif
-
-	srand(time(NULL));
 	int i = 0;
 	while(i < 10) {
 		dl_lock(ns);

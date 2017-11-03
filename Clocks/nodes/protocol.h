@@ -38,9 +38,10 @@ typedef struct clock_sync {
 } clock_sync_t;
 
 typedef struct mult {
-	int           m_id;
+	int               m_id;
+	enum msg_ordering m_order;
 	/* We will solve 10 limitation later */
-	unsigned long vec[10];
+	unsigned long     vec[10];
 } mult_t;
 
 typedef struct d_lock_msg {
@@ -68,7 +69,7 @@ void send_time_difference(node_status_t *ns, int dmon, unsigned long clock);
 void send_update_time(node_status_t *ns, int id, double adjust);
 void clock_sync_recieved(node_status_t *ns, clock_sync_t srt);
 void send_mult_ready(node_status_t *ns);
-void send_mult_msg(node_status_t *ns);
+void send_mult_msg(node_status_t *ns, enum msg_ordering causality);
 void send_lock_request(node_status_t *ns);
 void send_unlock_request(node_status_t *ns);
 void send_lock_granted(node_status_t *ns, int id);

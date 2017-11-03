@@ -23,6 +23,11 @@ enum conn_stat {
 	READY_MULTICAST
 };
 
+enum msg_ordering {
+	CAUSAL,
+	NOT_CAUSAL,
+};
+
 typedef struct node_config {
 	int            nc_id;
 	enum conn_stat nc_status;
