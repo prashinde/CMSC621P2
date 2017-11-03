@@ -110,7 +110,7 @@ typedef struct d_lock_requestor {
 	enum request_status dlr_state;
 	condition_variable  dlr_cv;
 	mutex               dlr_mx;
-	int                 dlr_fd;
+	FILE               *dlr_fp;
 	string              dlr_fname;
 } dlr_request_t;
 

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <iomanip>
 #include <string>
+#include <assert.h>
 #include <iostream>
 
 #include "protocol.h"
@@ -16,12 +17,29 @@ using namespace std;
 
 void access_file(node_status_t *ns)
 {
+	FILE *fp = ns->ns_lock_req->dlr_fp;
 	int ff;
-	int fd = ns->ns_lock_req->dlr_fd;
-	read(fd, (void *)&ff, sizeof(int));
-	cout << "Read value from file:" << ff <<endl;
+	int ff_t;
+
+	fseek(fp, 0L, SEEK_SET);
+	fscanf(fp, "%d", &ff);
 	ff++;
+	fseek(fp, 0L, SEEK_SET);
+	fprintf(fp, "%d", ff);
+	fseek(fp, 0L, SEEK_SET);
+	fscanf(fp, "%d", &ff_t);
+
+	cr_log << "Writte Value:" << ff << " Read value:" << ff_t << endl;
+	assert(ff == ff_t);
+
+	/*lseek(fd, 0, SEEK_SET);
+	read(fd, (void *)ff, sizeof(int));
+	ff_i = atoi(*ff);
+	cout << "Read value from file:" << ff_i <<endl;
+	(*ff) == ff_i+1;
+	lseek(fd, 0, SEEK_SET);
 	write(fd, (void*)&ff, sizeof(int));
+	delete ff;*/
 }
 
 void multicast_final_print(node_status_t *ns)
@@ -179,13 +197,18 @@ int main(int argc, char *argv[])
 
 #endif
 
+	srand(time(NULL));
 	int i = 0;
 	while(i < 10) {
 		dl_lock(ns);
 		access_file(ns);
 		dl_unlock(ns);
+		usleep(1000+(rand()%1000));
+		i++;
 	}
 
+	while(1)
+		usleep(100000);
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete self;
