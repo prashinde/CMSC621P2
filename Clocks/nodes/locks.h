@@ -4,7 +4,7 @@
 #include "cluster.h"
 #include "protocol.h"
 
-int dl_init_request(node_status_t *ns, char *fname);
+int dl_init_request(node_status_t *ns);
 int dl_lock(node_status_t *ns);
 int dl_unlock(node_status_t *ns);
 

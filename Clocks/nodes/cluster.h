@@ -93,7 +93,10 @@ typedef struct buffered_multicast {
 } buffer_m_t;
 
 typedef struct app_msg {
-	unsigned long bm_V[10];
+	int           app_from;
+	int           app_v_size;
+	unsigned long app_V[10];
+	unsigned long current_V[10];
 } app_msg_t;
 
 typedef struct causal {
@@ -130,8 +133,6 @@ typedef struct d_lock_requestor {
 	enum request_status dlr_state;
 	condition_variable  dlr_cv;
 	mutex               dlr_mx;
-	FILE               *dlr_fp;
-	string              dlr_fname;
 } dlr_request_t;
 
 typedef struct node_status {

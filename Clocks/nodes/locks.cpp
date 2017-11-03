@@ -3,7 +3,7 @@
 #include "locks.h"
 #include "logger.h"
 
-int dl_init_request(node_status_t *ns, char *fname)
+int dl_init_request(node_status_t *ns)
 {
 	dlr_request_t *lock_req;
 
@@ -12,14 +12,6 @@ int dl_init_request(node_status_t *ns, char *fname)
 		return -ENOMEM;
 	}
 
-	lock_req->dlr_fp = fopen(fname, "r+");
-	if(lock_req->dlr_fp == NULL) {
-		cr_log << "Unable to open file." << errno << endl;
-		delete lock_req;
-		return -EINVAL;
-	}
-
-	setvbuf(lock_req->dlr_fp, NULL, _IONBF, 0);
 	lock_req->dlr_state = RELEASED;
 	ns->ns_lock_req = lock_req;
 	return 0;

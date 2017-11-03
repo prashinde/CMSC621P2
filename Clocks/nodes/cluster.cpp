@@ -30,14 +30,12 @@ node_status_t *bootstrap_cluster(cluster_boot_t *cbt)
 	int           isdaemon;
 	char         *nodelist;
 	unsigned long iclock;
-	char         *fname;
 	enum msg_ordering causality;
 
 	id = cbt->cbp_id;
 	isdaemon = cbt->cbp_isdaemon;
 	nodelist = cbt->cbp_nodelist;
 	iclock = cbt->cbp_iclock;
-	fname = cbt->cbp_fname;
 
 	cout << "Node " << id << "is started with clock:" << iclock << endl;
 	cluster_config_t *cc = new cluster_config_t;
@@ -95,7 +93,7 @@ node_status_t *bootstrap_cluster(cluster_boot_t *cbt)
 	if(ns->ns_isdmon)
 		dl_init_lock(ns);
 
-	rc = dl_init_request(ns, fname);
+	rc = dl_init_request(ns);
 	if(rc != 0) {
 		cr_log << "Distributed lock bootstrap failed..";
 		return NULL;
