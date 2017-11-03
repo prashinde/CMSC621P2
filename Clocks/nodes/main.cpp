@@ -10,8 +10,19 @@
 #include "util.h"
 #include "logger.h"
 #include "state.h"
+#include "locks.h"
 
 using namespace std;
+
+void access_file(node_status_t *ns)
+{
+	int ff;
+	int fd = ns->ns_lock_req->dlr_fd;
+	read(fd, (void *)&ff, sizeof(int));
+	cout << "Read value from file:" << ff <<endl;
+	ff++;
+	write(fd, (void*)&ff, sizeof(int));
+}
 
 void multicast_final_print(node_status_t *ns)
 {
@@ -48,19 +59,21 @@ int main(int argc, char *argv[])
 	int           isdaemon;
 	char         *nodelist;
 	unsigned long iclock;
+	char         *fname;
 
 	/* Some parameters for floating point and log */
     	ios_base::sync_with_stdio(false); 
 	setiosflags(ios::fixed);
 	setprecision(15);
 
-	if(argc != 5) {
+	if(argc != 6) {
 		cout << "usage ./node <id> <nodelist> <d> <clock>" << endl;
 		cout << "\
 			 1. id -> Node identifier\n \
 			 2. nodelist -> A file containing a list of all processes\n \
 			 3. d -> Whether a node is time-daemon\n \
-			 4. clock -> initial clock";
+			 4. clock -> initial clock\n \
+			 5. filename -> Accesses to this file are serialized\n";
 			return -EINVAL;
 	}
 
@@ -68,6 +81,7 @@ int main(int argc, char *argv[])
 	nodelist = argv[2];
 	isdaemon = atoi(argv[3]);
 	iclock = atol(argv[4]);
+	fname = argv[5];
 
 	cout << "Node " << id << "is started with clock:" << iclock << endl;	
 	cluster_config_t *cc = new cluster_config_t;
@@ -122,6 +136,15 @@ int main(int argc, char *argv[])
 	ns->ns_self = self;
 	ns->ns_cc = cc;
 
+	if(ns->ns_isdmon)
+		dl_init_lock(ns);
+
+	rc = dl_init_request(ns, fname);
+	if(rc != 0) {
+		cr_log << "Distributed lock bootstrap failed..";
+		return rc;
+	}
+
 	/* Start node's state machine. */
 	START_STATE_MC(ns);
 
@@ -143,7 +166,7 @@ int main(int argc, char *argv[])
 	cr_log << "***ID:" << self->nc_id << " Logical Clock:" << self->nc_clock << endl;
 	/*****************************************/
 	multicast_init_vector(ns);
-
+#if 0
 	srand(time(NULL));
 	for(int i = 0; i < 100; i++) {
 		multicast(ns);
@@ -153,13 +176,19 @@ int main(int argc, char *argv[])
 	cout << "------------------------------------------------" << endl;
 	multicast_final_print(ns);
 	cout << endl;
-#if 0
+
+#endif
+
+	int i = 0;
+	while(i < 10) {
+		dl_lock(ns);
+		access_file(ns);
+		dl_unlock(ns);
+	}
+
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete self;
 	delete cc;
-#endif
-	while(1) 
-		usleep(1000000);
 	return 0;
 }

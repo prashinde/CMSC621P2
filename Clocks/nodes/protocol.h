@@ -1,6 +1,7 @@
 #ifndef __PROTO_H_
 #define __PROTO_H_
 
+#include "locks.h"
 #include "multicast.h"
 #include "state.h"
 enum msg_type {
@@ -10,6 +11,9 @@ enum msg_type {
 	UPDATE_CLK,
 	MULTICAST_RD,
 	MULTICAST,
+	LOCK_REQUEST,
+	LOCK_RELEASE,
+	LOCK_GRANTED,
 };
 
 typedef struct hello {
@@ -39,6 +43,10 @@ typedef struct mult {
 	unsigned long vec[10];
 } mult_t;
 
+typedef struct d_lock_msg {
+	int dl_id;
+} lock_msg_t;
+
 typedef struct MESSAGE {
 	unsigned long M_seq_no;
         enum msg_type M_type;
@@ -49,8 +57,10 @@ typedef struct MESSAGE {
 		update_clk_t M_u_uct;
 		mult_ready_t M_u_mrt;
 		mult_t M_u_mult;
+		lock_msg_t M_u_lmt;
 	} u;
 } msg_t;
+
 bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg);
 void send_hello_message(int id, node_status_t *ns);
 void send_clock_message(node_status_t *ns, int id);
@@ -59,4 +69,7 @@ void send_update_time(node_status_t *ns, int id, double adjust);
 void clock_sync_recieved(node_status_t *ns, clock_sync_t srt);
 void send_mult_ready(node_status_t *ns);
 void send_mult_msg(node_status_t *ns);
+void send_lock_request(node_status_t *ns);
+void send_unlock_request(node_status_t *ns);
+void send_lock_granted(node_status_t *ns, int id);
 #endif

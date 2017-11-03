@@ -1,5 +1,109 @@
 #include "protocol.h"
 
+void process_lock_request(c_sock *cs, node_status_t *ns, lock_msg_t lmt)
+{
+	dl_lock_req(ns, lmt.dl_id);
+}
+
+void process_lock_release(c_sock *cs, node_status_t *ns, lock_msg_t lmt)
+{
+	dl_unlock_req(ns, lmt.dl_id);
+}
+
+void process_lock_granted(c_sock *cs, node_status_t *ns)
+{
+	dl_lock_granted(ns);
+}
+
+void send_lock_granted(node_status_t *ns, int id)
+{
+	cluster_config_t *cc = ns->ns_cc;
+	node_config_t *node;
+
+	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
+	msg->M_type = LOCK_GRANTED;
+
+	node = cc_get_record(id, cc);
+	if(node == NULL) {
+		cr_log << " Invalid configuration close connection.";
+		return ;
+	}
+
+	if(node->nc_status == NOT_CONNECTED) {
+		cr_log << "Client server not connected not connected. Abort";
+		return ;
+	}
+
+	c_sock *c_wr = node->nc_sock;
+	ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
+	if(ret < 0) {
+		cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
+	}
+}
+
+void send_unlock_request(node_status_t *ns)
+{
+	cluster_config_t *cc = ns->ns_cc;
+	node_config_t *node;
+
+	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
+	msg->M_type = LOCK_RELEASE;
+
+	lock_msg_t lmt;
+	lmt.dl_id = ns->ns_self->nc_id;
+
+	msg->u.M_u_lmt = lmt;	
+	node = cc_get_record(cc->t_daemon, cc);
+	if(node == NULL) {
+		cr_log << " Invalid configuration close connection.";
+		return ;
+	}
+
+	if(node->nc_status == NOT_CONNECTED) {
+		cr_log << "Central server not connected not connected. Abort";
+		return ;
+	}
+
+	c_sock *c_wr = node->nc_sock;
+	ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
+	if(ret < 0) {
+		cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
+	}
+}
+
+void send_lock_request(node_status_t *ns)
+{
+	cluster_config_t *cc = ns->ns_cc;
+	node_config_t *node;
+
+	msg_t *msg = new msg_t;
+	msg->M_seq_no = 0;
+	msg->M_type = LOCK_REQUEST;
+
+	lock_msg_t lmt;
+	lmt.dl_id = ns->ns_self->nc_id;
+
+	msg->u.M_u_lmt = lmt;	
+	node = cc_get_record(cc->t_daemon, cc);
+	if(node == NULL) {
+		cr_log << " Invalid configuration close connection.";
+		return ;
+	}
+
+	if(node->nc_status == NOT_CONNECTED) {
+		cr_log << "Central server not connected not connected. Abort";
+		return ;
+	}
+
+	c_sock *c_wr = node->nc_sock;
+	ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
+	if(ret < 0) {
+		cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
+	}
+}
+
 void process_multicast_message(c_sock *cs, node_status_t *ns, mult_t msg)
 {
 	usleep(1000+(rand()%1000));
@@ -269,6 +373,18 @@ bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg)
 		case MULTICAST:
 		/* TODO: Ignore messages during clock sync. */
 		process_multicast_message(cs, ns, msg->u.M_u_mult);
+		break;
+
+		case LOCK_REQUEST:
+		process_lock_request(cs, ns, msg->u.M_u_lmt);
+		break;
+
+		case LOCK_RELEASE:
+		process_lock_release(cs, ns, msg->u.M_u_lmt);
+		break;
+
+		case LOCK_GRANTED:
+		process_lock_granted(cs, ns);
 		break;
 
 		default:
