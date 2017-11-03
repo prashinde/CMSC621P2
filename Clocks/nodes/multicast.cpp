@@ -27,21 +27,23 @@ void multicast_init_vector(node_status_t *ns)
 	list<node_config_t *> ll = get_list(ns->ns_cc);
 	for(int i = 1; i <= ll.size(); i++)
 		ct->c_V[i] = ns->ns_self->nc_clock;
-
+	
+	pthread_mutex_init(&ct->c_mx, NULL);
 	ct->c_v_size = ll.size();
+	ct->c_count = 0;
 	ns->ns_causal = ct;
 }
 
 void multicast(node_status_t *ns)
 {
 	causal_t *ct = ns->ns_causal;
-	unique_lock<mutex> lck(ct->c_mx);
+	pthread_mutex_lock(&ct->c_mx);
 	ct->c_V[ns->ns_self->nc_id]++;
 	send_mult_msg(ns);
-	lck.unlock();
+	pthread_mutex_unlock(&ct->c_mx);
 }
 
-static void print_v(unsigned long msg[100], unsigned long self[100], int size)
+static void print_v(unsigned long msg[10], unsigned long self[10], int size)
 {
 	cr_log << "[";
 	for(int i = 1; i <= size; i++) {
@@ -88,11 +90,13 @@ void deliver_buffered_messages(node_status_t *ns)
 	}
 }
 
-void mulicast_recv(node_status_t *ns, unsigned long msg[100], int id)
+void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id)
 {
 	causal_t *ct = ns->ns_causal;
 	bool deliver = true;
-	unique_lock<mutex> lck(ct->c_mx);
+//	cout << "Locking the mcast mutex" << endl;
+	pthread_mutex_lock(&ct->c_mx);
+	ct->c_count++;
 	for(int i = 1; i <= ct->c_v_size; i++) {
 		if(i == id)
 			continue;
@@ -101,24 +105,26 @@ void mulicast_recv(node_status_t *ns, unsigned long msg[100], int id)
 			break;
 		}
 	}
+	//cout << "From: " << id << " Multicast count: " << ct->c_count << endl;
 
 	if(deliver) {
 		cr_log << "Deliver a message: On Node:" << ns->ns_self->nc_id << "from " << id << endl;
 		ct->c_V[id] = msg[id];
 		print_v(msg, ct->c_V, ct->c_v_size);
-		deliver_buffered_messages(ns);
+		//deliver_buffered_messages(ns);
 	} else {
 		cr_log << "Buffer a message:" << endl;
-		print_v(msg, ct->c_V, ct->c_v_size);
+		//print_v(msg, ct->c_V, ct->c_v_size);
 
-		buffer_m_t *mcast = new buffer_m_t;
+		/*buffer_m_t *mcast = new buffer_m_t;
 		mcast->bm_id = id;
 		mcast->bm_V = new unsigned long[(ct->c_v_size)+1];
 
 		for(int i = 1; i <= ct->c_v_size; i++)
 			mcast->bm_V[i] = msg[i];
 		mcast->bm_dl = false;
-		(ct->c_buffer).push_back(mcast);;
+		(ct->c_buffer).push_back(mcast);*/
 	}
-	lck.unlock();
+	pthread_mutex_unlock(&ct->c_mx);
+//	cout << "Unlocking the mcast mutex" << endl;
 }

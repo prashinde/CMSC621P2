@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 
+#include "protocol.h"
 #include "multicast.h"
 #include "cluster.h"
 #include "util.h"
@@ -18,12 +19,15 @@ void print_cluster_config(cluster_config_t *cc)
 	
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
-		cout << "id:" << (*it)->nc_id << "\n";
-		cout << "ip_addr:" << (*it)->nc_ip_addr << "\n";
-		cout << "port num:" << (*it)->nc_port_num << "\n";
-		cout << "-------------------------------------------\n";
-		cout << "\n";
+		cr_log << "id:" << (*it)->nc_id << "\n";
+		cr_log << "ip_addr:" << (*it)->nc_ip_addr << "\n";
+		cr_log << "port num:" << (*it)->nc_port_num << "\n";
+		cr_log << "connection status:" << (*it)->nc_status << "\n";
+		cr_log << "-------------------------------------------\n";
+		cr_log << "\n";
 	}
+
+	cout << endl;
 }
 
 int main(int argc, char *argv[])
@@ -53,7 +57,8 @@ int main(int argc, char *argv[])
 	nodelist = argv[2];
 	isdaemon = atoi(argv[3]);
 	iclock = atol(argv[4]);
-	
+
+	cout << "Node " << id << "is started with clock:" << iclock << endl;	
 	cluster_config_t *cc = new cluster_config_t;
 	if(cc == NULL) {
 		return -ENOMEM;
@@ -92,8 +97,8 @@ int main(int argc, char *argv[])
 
 		list<node_config_t *> ll = get_list(cc);
 		bmt->b_procs = ll.size();
-		bmt->b_times = new unsigned long [ll.size()+1];
-		if(bmt->b_times == NULL) {
+		bmt->b_diffs = new long [ll.size()+1];
+		if(bmt->b_diffs == NULL) {
 			delete cc;
 			return -ENOMEM;
 		}
@@ -114,24 +119,33 @@ int main(int argc, char *argv[])
 		//cr_log << "Kick started the protocol.." << endl;
 		BERKELY_SYNC(ns);
 	}
+
+	while(ns->ns_state != ENTERING_MULTICAST)
+		usleep(1000);
+	cout << "Entered Multicast state.." << endl;	
+	print_cluster_config(cc);
+	send_mult_ready(ns);
+
 	/* ALL OTHER SHOULD WAIT FOR PROT TO COMPLETE */
-	WAIT_MULT_READY(ns);
+	//WAIT_MULT_READY(ns);
 	/*****************************************/
 	cr_log << "***ID:" << self->nc_id << " Logical Clock:" << self->nc_clock << endl;
 	/*****************************************/
-
 	multicast_init_vector(ns);
 
 	srand(time(NULL));
-	for(int i = 0; i < 10; i++) {
+	for(int i = 0; i < 15; i++) {
 		multicast(ns);
 		usleep(1000+(rand()%1000));
 	}
 
-	usleep(3000000);
+#if 0
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete self;
 	delete cc;
+#endif
+	while(1) 
+		usleep(1000000);
 	return 0;
 }

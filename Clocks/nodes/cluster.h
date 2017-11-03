@@ -61,12 +61,13 @@ enum node_states {
 	CLK_SYNC_READY,
 	CLK_SYNC_START,
 	CLK_SYN_UPDATE,
+	ENTERING_MULTICAST,
 	ACCEPT_MULTICAST
 };
 
 typedef struct berkley {
 	mutex          b_mx;
-	unsigned long *b_times;
+	long          *b_diffs;
 	unsigned int   b_procs;
 } berkley_t;
 
@@ -77,10 +78,11 @@ typedef struct buffered_multicast {
 } buffer_m_t;
 
 typedef struct causal {
-	mutex          c_mx;
-	unsigned long  c_v_size;
-	unsigned long  c_V[100];
+	long            c_count;
+	unsigned long   c_v_size;
+	unsigned long   c_V[10];
 	list<buffer_m_t *> c_buffer;
+	pthread_mutex_t c_mx;
 } causal_t;
 
 typedef struct node_status {
@@ -96,6 +98,7 @@ typedef struct node_status {
 typedef struct node_con_ctx {
 	node_status_t *ncc_ns;
 	c_sock        *ncc_cs;
+	node_config_t *ncc_connector;
 } node_con_ctx_t;
 
 node_config_t *cc_get_record(int id, cluster_config_t *cc);
@@ -106,7 +109,6 @@ node_config_t *cc_get_daemon(cluster_config_t *cc);
 int load_cluster(int id, char *configi, cluster_config_t *cc);
 
 void BERKELY_SYNC(node_status_t *ns);
-void clock_sync_recieved(node_status_t *ns);
-void berkley_clk_sync_rep(node_status_t *ns, int id, unsigned long clock);
+void berkley_clk_sync_rep(node_status_t *ns, int id, long cl_diff);
 void berkley_adjust_clock(node_status_t *ns, double adjust);
 #endif

@@ -1,7 +1,7 @@
 #!/bin/bash
 tdaemon=3
 VALGRIND=
-#VALGRIND="valgrind --log-file="valg""
+#VALGRIND="valgrind --track-origins=yes --log-file="valg""
 for i in {1..3} 
 do
 	if [ $i -eq $tdaemon ]

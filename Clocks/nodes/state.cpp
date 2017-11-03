@@ -12,10 +12,16 @@ static void *incoming(void *ctx)
 	node_status_t *ns = ctxt->ncc_ns;
 	ssize_t rcv = 0;
 
+	srand(time(NULL));
 	while(cont) {
 		msg_t *msg = new msg_t;
+		if(msg == NULL) {
+			cr_log << "Insufficient memory.." << endl;
+			break;
+		}
 		rcv = 0;
 		rcv = cs->c_sock_read(msg, sizeof(msg_t));
+		usleep(1000+(rand()%1000));
 		cont = process_msg(cs, ns, msg);
 	}
 	cs->c_sock_close();
@@ -119,7 +125,7 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 	}
 	ctx->ncc_cs = bs;
 	ctx->ncc_ns = ns;
-
+	ctx->ncc_connector = boss;
 	/* Handle incoming traffic from this node */
 	thread t1(incoming, ctx);
 	t1.detach();
@@ -128,7 +134,7 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 
 static void CONNECT_TO_SELF(node_status_t *ns)
 {
-	connect_to_one_boss(ns, ns->ns_self);
+	connect_to_one_boss(ns, cc_get_record(ns->ns_self->nc_id, ns->ns_cc));
 }
 
 static void CONNECT_TO_BOSSES(node_status_t *ns)
@@ -141,9 +147,8 @@ static void CONNECT_TO_BOSSES(node_status_t *ns)
 	for(it = ll.begin(); it != ll.end(); ++it) {
 		if(self->nc_id > (*it)->nc_id)
 			continue;
-		connect_to_one_boss(ns, *it);
+		connect_to_one_boss(ns, cc_get_record((*it)->nc_id, cc));
 	}
-
 }
 
 static void WAIT_MC(cluster_config_t *cc, int self)

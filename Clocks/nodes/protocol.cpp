@@ -24,13 +24,15 @@ void send_mult_msg(node_status_t *ns)
 	msg->u.M_u_mult = mul;
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
+		cout << " Sending to process:" <<(*it)->nc_id<< endl;
+		while((*it)->nc_status != READY_MULTICAST)
+			usleep(1000);
 		c_sock *c_wr = (*it)->nc_sock;
 		ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
 		if(ret < 0) {
 			cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
 		}
 	}
-
 }
 
 static void process_multicast_rd(c_sock *cs, node_status_t *ns, mult_ready_t mrt)
@@ -55,6 +57,10 @@ void send_mult_ready(node_status_t *ns)
 
 	list<node_config_t*>::iterator it;
 	for(it = ll.begin(); it != ll.end(); ++it) {
+		if((*it)->nc_status == NOT_CONNECTED) {
+			cout << "Node "<< (*it)->nc_id << " Not connected.." << endl;
+			return;
+		}
 		c_sock *c_wr = (*it)->nc_sock;
 		ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
 		if(ret < 0) {
@@ -102,10 +108,10 @@ void send_update_time(node_status_t *ns, int id, double adjust)
 
 static void process_clk_sync_rep(c_sock *cs, node_status_t *ns, sync_reply_t msg)
 {
-	berkley_clk_sync_rep(ns, msg.h_id, msg.clock);
+	berkley_clk_sync_rep(ns, msg.h_id, msg.diff);
 }
 
-void send_time(node_status_t *ns, int dmon)
+void send_time_difference(node_status_t *ns, int dmon, unsigned long dclock)
 {
 	cluster_config_t *cc = ns->ns_cc;
 	node_config_t *node;
@@ -116,8 +122,9 @@ void send_time(node_status_t *ns, int dmon)
 
 	sync_reply_t srt;
 	srt.h_id = ns->ns_self->nc_id;
-	srt.clock = ns->ns_self->nc_clock;
+	srt.diff = (ns->ns_self->nc_clock - dclock);
 
+	cout << "node: " << srt.h_id << " Sending difference to tdaemon: " << srt.diff << endl;
 	msg->u.M_u_srt = srt;	
 	node = cc_get_record(dmon, cc);
 	if(node == NULL) {
@@ -139,10 +146,10 @@ void send_time(node_status_t *ns, int dmon)
 
 static void process_clk_sync_start(c_sock *cs, node_status_t *ns, msg_t *msg)
 {
-	clock_sync_recieved(ns);
+	clock_sync_recieved(ns, msg->u.M_u_cst);
 }
 
-void send_sync_message(node_status_t *ns, int id)
+void send_clock_message(node_status_t *ns, int id)
 {
 	cluster_config_t *cc = ns->ns_cc;
 	node_config_t *client;
@@ -150,6 +157,10 @@ void send_sync_message(node_status_t *ns, int id)
 	msg_t *msg = new msg_t;
 	msg->M_seq_no = 0;
 	msg->M_type = SEND_CLK;
+
+	clock_sync_t cst;
+	cst.clock = ns->ns_self->nc_clock;
+	msg->u.M_u_cst = cst;
 
 	client = cc_get_record(id, cc);
 	if(client == NULL) {
@@ -159,6 +170,7 @@ void send_sync_message(node_status_t *ns, int id)
 
 	if(client->nc_status != CONNECTED) {
 		cr_log << "Client not connected. Abort";
+		return ;
 	}
 
 	c_sock *c_wr = client->nc_sock;
@@ -198,10 +210,8 @@ void send_hello_message(int id, node_status_t *ns)
 		return ;
 	}
 
-	cout << "SEnding hello message from : " << h.h_id << " to:" << id << endl;
 	c_sock *c_wr = boss->nc_sock;
 
-	//cout << "Size of msg:" << sizeof(msg_t) << " :" << sizeof *msg << endl;
 	ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
 	if(ret < 0) {
 		cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
@@ -212,14 +222,14 @@ static int process_hello_message(c_sock *cs, node_status_t *ns, hello_t msg)
 {
 	cluster_config_t *cc = ns->ns_cc;
 	node_config_t *connected_nc;
-	
+
+	cout << "Recieved hellow message from: " << msg.h_id << endl;	
 	connected_nc = cc_get_record(msg.h_id, cc);
 	if(connected_nc == NULL) {
 		cr_log << "Unable to find valid conf for node:"<< msg.h_id << endl;
 		return -EINVAL;
 	}
 
-	cr_log << "Recieved hello from " << msg.h_id << "to " << ns->ns_self->nc_id << endl;
 	connected_nc->nc_status = CONNECTED;
 	connected_nc->nc_sock = cs;
 	return 0;
