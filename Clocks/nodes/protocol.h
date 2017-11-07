@@ -14,11 +14,16 @@ enum msg_type {
 	LOCK_REQUEST,
 	LOCK_RELEASE,
 	LOCK_GRANTED,
+	BYE,
 };
 
 typedef struct hello {
 	int           h_id;
 } hello_t;
+
+typedef struct bye {
+	int           b_id;
+} bye_t;
 
 typedef struct sync_reply {
 	int           h_id;
@@ -53,6 +58,7 @@ typedef struct MESSAGE {
         enum msg_type M_type;
 	union {
 		hello_t M_u_h;
+		bye_t M_u_b;
 		clock_sync_t M_u_cst;
 		sync_reply_t M_u_srt;
 		update_clk_t M_u_uct;
@@ -73,4 +79,5 @@ void send_mult_msg(node_status_t *ns, enum msg_ordering causality);
 void send_lock_request(node_status_t *ns);
 void send_unlock_request(node_status_t *ns);
 void send_lock_granted(node_status_t *ns, int id);
+void send_bye_message(node_status_t *id);
 #endif

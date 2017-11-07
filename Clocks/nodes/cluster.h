@@ -20,7 +20,7 @@ using namespace std;
 enum conn_stat {
 	NOT_CONNECTED,
 	CONNECTED,
-	READY_MULTICAST
+	READY_MULTICAST,
 };
 
 enum msg_ordering {
@@ -90,13 +90,17 @@ typedef struct buffered_multicast {
 	int bm_id;
 	bool bm_dl;
 	unsigned long *bm_V;
+	unsigned long  bm_o_V[10];
 } buffer_m_t;
 
 typedef struct app_msg {
 	int           app_from;
 	int           app_v_size;
+	bool          from_buffer;
+	bool          violates;
 	unsigned long app_V[10];
 	unsigned long current_V[10];
+	unsigned long old_V[10];
 } app_msg_t;
 
 typedef struct causal {
@@ -159,7 +163,11 @@ int insert_node_config(cluster_config_t *cc, node_config_t *nc);
 list<node_config_t *> get_list(cluster_config_t *cc);
 void elect_coordinator(cluster_config_t *cc);
 node_config_t *cc_get_daemon(cluster_config_t *cc);
-int load_cluster(int id, char *configi, cluster_config_t *cc);
+int load_cluster(int id, char *config, cluster_config_t *cc);
+
+void stop_cluster(node_status_t *ns);
+cluster_config_t *cc_get_cc(node_status_t *ns);
+int cc_nr_nodes(cluster_config_t *cc);
 
 void BERKELY_SYNC(node_status_t *ns);
 void berkley_clk_sync_rep(node_status_t *ns, int id, long cl_diff);

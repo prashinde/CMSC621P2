@@ -46,25 +46,35 @@ static void access_file(FILE *fp)
 void multicast_final_print(node_status_t *ns)
 {
 	causal_t *ct = ns->ns_causal;
-	while(ct->c_count != 300)
-		usleep(1000000);
 
+	cout << " [";
 	for(int i = 1; i <= ct->c_v_size; i++)
-		cout << " " << ct->c_V[i] << endl;
+		cout << " " << ct->c_V[i];
+	cout << "]";
 	cout << endl;
 }
 
-static void print_v(unsigned long self[10], unsigned long msg[10], int size)
+static void print_v(app_msg_t *msg)
 {
+	int size = msg->app_v_size;
+
+	cout << "From:" << msg->app_from << " Was buffered:" << msg->from_buffer << " " << \
+		" Causality Violation:" << msg->violates << " ";	
 	cout << "[";
 	for(int i = 1; i <= size; i++) {
-		cout << self[i] << " ";
+		cout << msg->old_V[i] << " ";
 	}
 	cout << "] " ;
 
 	cout << "[";
 	for(int i = 1; i <= size; i++) {
-		cout << msg[i] << " ";
+		cout << msg->app_V[i] << " ";
+	}
+	cout << "] " ;
+
+	cout << "[";
+	for(int i = 1; i <= size; i++) {
+		cout << msg->current_V[i] << " ";
 	}
 	cout << "] " << endl;
 }
@@ -82,12 +92,13 @@ void *sfunc(void *ctx)
 void *rfunc(void *ctx)
 {
 	recv_t *rctx = (recv_t*)ctx;
+	cout << "About to recieve:" << rctx->nr_msg << " messages:" << endl;
 	for(int i = 0; i < rctx->nr_msg; i++) {
 		app_msg_t *msg = multicast_app_recv(rctx->ns);
 		if(msg == NULL) {
 			cr_log << "Recieved NULL message from communication!" << endl;
 		} else { 
-			print_v(msg->current_V, msg->app_V, msg->app_v_size);
+			print_v(msg);
 			delete msg;
 		}
 	}
@@ -137,7 +148,12 @@ int main(int argc, char *argv[])
 	
 	recv_t *rctx = new recv_t;
 	rctx->ns = ns;
-	rctx->nr_msg = atoi(argv[6]);
+
+	cluster_config_t *cc = cc_get_cc(ns);
+
+	/* We will recieve (n-1)*msg_per_node messages */
+	cout << "Number of nodes in a cluster:" << cc_nr_nodes(cc) << endl;
+	rctx->nr_msg = atoi(argv[6])*(cc_nr_nodes(cc)-1);
 
 	thread s_thread(sfunc, sctx);
 	thread r_thread(rfunc, rctx);
@@ -145,9 +161,7 @@ int main(int argc, char *argv[])
 	s_thread.join();
 	r_thread.join();
 	
-	cout << "------------------------------------------------" << endl;
 	multicast_final_print(ns);
-	cout << endl;
 
 	fp = fopen(argv[7], "r+");
 	if(fp == NULL) {
@@ -168,8 +182,9 @@ int main(int argc, char *argv[])
 
 	fclose(fp);
 
-	while(1)
-		usleep(1000000);
+	/* It will wait for every other instance of the application to send BYE message. */
+	stop_cluster(ns);
+
 	/* We will be back here when state machine reaches OFF state */
 	delete ns;
 	delete rctx;

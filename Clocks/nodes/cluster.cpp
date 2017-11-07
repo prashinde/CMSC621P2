@@ -166,3 +166,38 @@ node_config_t *cc_get_daemon(cluster_config_t *cc)
 	}
 	return NULL;
 }
+
+cluster_config_t *cc_get_cc(node_status_t *ns)
+{
+	return ns->ns_cc;
+}
+
+int cc_nr_nodes(cluster_config_t *cc)
+{
+	list<node_config_t *> ll = get_list(cc);	
+	return ll.size();
+}
+
+void stop_cluster(node_status_t *ns)
+{
+	list<node_config_t *> ll = get_list(ns->ns_cc);	
+	list<node_config_t*>::iterator it;
+
+	/* Co-ordinator shutdown is different than other nodes.
+	 * Co-ordinator cannot shutdown without everyone else' consent.
+	 * It cannot send bye message.
+	 * It just waits for everyone else to send it a bye message
+	 * and it silently exits after everyone does so!
+	 * IT IS A DARK KNIGHT!!
+	 **/
+	cout << "-----------------------------SHUTDOWN BEGIN------------------" << endl;
+	if(!ns->ns_isdmon) {
+		send_bye_message(ns);
+	}
+
+	for(it = ll.begin(); it != ll.end(); ++it) {
+		while((*it)->nc_status != NOT_CONNECTED)
+			usleep(1000);
+	}
+	cout << "----------------------------CLUSTER IS SHUTDOWN------------------" << endl;
+}

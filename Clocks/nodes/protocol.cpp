@@ -289,6 +289,46 @@ void send_clock_message(node_status_t *ns, int id)
 	}
 }
 
+void process_bye_message(node_status_t *ns, bye_t b_msg)
+{
+	cluster_config_t *cc = ns->ns_cc;
+	node_config_t *node;
+
+	node = cc_get_record(b_msg.b_id, cc);
+	if(node == NULL) {
+		return ;
+	}
+
+	node->nc_status = NOT_CONNECTED;
+}
+
+void send_bye_message(node_status_t *ns)
+{
+	cluster_config_t *cc = ns->ns_cc;
+	list<node_config_t *> ll = get_list(cc);	
+	msg_t *msg = new msg_t;
+	/* HAndle filure */
+
+	msg->M_seq_no = 0;
+	msg->M_type = BYE;
+
+	msg->u.M_u_b.b_id = ns->ns_self->nc_id;
+	list<node_config_t*>::iterator it;
+	for(it = ll.begin(); it != ll.end(); ++it) {
+		if((*it)->nc_status == NOT_CONNECTED) {
+			cout << "Node "<< (*it)->nc_id << " Not connected.." << endl;
+			continue;
+		}
+		c_sock *c_wr = (*it)->nc_sock;
+		ssize_t ret = c_wr->c_sock_write((void *)msg, sizeof(msg_t));
+		if(ret < 0) {
+			cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
+		}
+		c_wr->c_sock_close();
+		(*it)->nc_status = NOT_CONNECTED;
+	}
+}
+
 void send_hello_message(int id, node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -386,6 +426,11 @@ bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg)
 
 		case LOCK_GRANTED:
 		process_lock_granted(cs, ns);
+		break;
+
+		case BYE:
+		process_bye_message(ns, msg->u.M_u_b);
+		rc = false;
 		break;
 
 		default:
