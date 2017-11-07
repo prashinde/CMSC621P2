@@ -127,7 +127,10 @@ void deliver_buffered_messages(node_status_t *ns)
 			deliver_message_to_app(ct, (*it)->bm_V, id, (*it)->bm_o_V, true, false);
 			delete (*it)->bm_V;
 			(*it)->bm_dl = true;
-			it = (ct->c_buffer).erase(it);		
+			it = (ct->c_buffer).erase(it);
+			if((ct->c_buffer).size() == 0)
+				break;
+			it = (ct->c_buffer).begin();
 		} else
 			it++;
 	}

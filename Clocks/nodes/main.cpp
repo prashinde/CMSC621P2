@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	setprecision(15);
 
 	if(argc != 8) {
-		cout << "usage ./node <id> <nodelist> <d> <clock>" << endl;
+		cout << "usage ./node <id> <nodelist> <d> <clock> <causality> <num_msg> <filename>" << endl;
 		cout << "\
 			 1. id -> Node identifier\n \
 			 2. nodelist -> A file containing a list of all processes\n \
