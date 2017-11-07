@@ -15,6 +15,9 @@ void process_lock_granted(c_sock *cs, node_status_t *ns)
 	dl_lock_granted(ns);
 }
 
+/*
+ * Send lock granted to the client
+ */
 void send_lock_granted(node_status_t *ns, int id)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -42,6 +45,9 @@ void send_lock_granted(node_status_t *ns, int id)
 	}
 }
 
+/*
+ * Release distributed lock
+ */
 void send_unlock_request(node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -73,6 +79,9 @@ void send_unlock_request(node_status_t *ns)
 	}
 }
 
+/*
+ * Acquire distributed lock
+ */
 void send_lock_request(node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -104,12 +113,20 @@ void send_lock_request(node_status_t *ns)
 	}
 }
 
+/*
+ * Multicast is recived.
+ * Random sleep is added to generate the scenario where some messages
+ * are buffered.
+ */
 void process_multicast_message(c_sock *cs, node_status_t *ns, mult_t msg)
 {
 	usleep(1000+(rand()%1000));
 	mulicast_recv(ns, msg.vec, msg.m_id, msg.m_order);
 }
 
+/*
+ * Send multicast message to each node
+ */
 void send_mult_msg(node_status_t *ns, enum msg_ordering causality)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -144,11 +161,17 @@ void send_mult_msg(node_status_t *ns, enum msg_ordering causality)
 	}
 }
 
+/*
+ * Process muticast ready message
+ */
 static void process_multicast_rd(c_sock *cs, node_status_t *ns, mult_ready_t mrt)
 {
 	multicast_ready(ns, mrt.h_id);
 }
 
+/*
+ * Process entering the multicast state
+ */
 void send_mult_ready(node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -178,11 +201,17 @@ void send_mult_ready(node_status_t *ns)
 	}
 }
 
+/*
+ * Adjust yout own clock
+ */
 static void process_update_clk(c_sock *cs, node_status_t *ns, update_clk_t msg)
 {
 	berkley_adjust_clock(ns, msg.adjust);
 }
 
+/*
+ * Send adjust to client
+ */
 void send_update_time(node_status_t *ns, int id, double adjust)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -215,11 +244,17 @@ void send_update_time(node_status_t *ns, int id, double adjust)
 	}
 }
 
+/*
+ * Recived time difference from client 
+ */
 static void process_clk_sync_rep(c_sock *cs, node_status_t *ns, sync_reply_t msg)
 {
 	berkley_clk_sync_rep(ns, msg.h_id, msg.diff);
 }
 
+/*
+ * Send the time difference to tdaemon
+ */
 void send_time_difference(node_status_t *ns, int dmon, unsigned long dclock)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -253,11 +288,17 @@ void send_time_difference(node_status_t *ns, int dmon, unsigned long dclock)
 
 }
 
+/*
+ * Recieved clock_sync request from server.
+ */
 static void process_clk_sync_start(c_sock *cs, node_status_t *ns, msg_t *msg)
 {
 	clock_sync_recieved(ns, msg->u.M_u_cst);
 }
 
+/*
+ * Send the self clock to process id
+ */
 void send_clock_message(node_status_t *ns, int id)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -289,6 +330,9 @@ void send_clock_message(node_status_t *ns, int id)
 	}
 }
 
+/*
+ * Close the incoming connection
+ */
 void process_bye_message(node_status_t *ns, bye_t b_msg)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -302,6 +346,9 @@ void process_bye_message(node_status_t *ns, bye_t b_msg)
 	node->nc_status = NOT_CONNECTED;
 }
 
+/*
+ * Close the connection
+ */
 void send_bye_message(node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -329,6 +376,9 @@ void send_bye_message(node_status_t *ns)
 	}
 }
 
+/*
+ * Send hellow message to establish a communication channel
+ */
 void send_hello_message(int id, node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -366,7 +416,9 @@ void send_hello_message(int id, node_status_t *ns)
 		cr_log << "Error in writing into the socket:" << ret << " Errno:"<< errno << endl;
 	}
 }
-
+/*
+ * recieved hello message
+ */
 static int process_hello_message(c_sock *cs, node_status_t *ns, hello_t msg)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -384,6 +436,9 @@ static int process_hello_message(c_sock *cs, node_status_t *ns, hello_t msg)
 	return 0;
 }
 
+/*
+ * Generic incoming message parsing method
+ */
 bool process_msg(c_sock *cs, node_status_t *ns, msg_t *msg)
 {
 	bool rc = true;

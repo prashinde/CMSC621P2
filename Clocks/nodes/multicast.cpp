@@ -1,6 +1,9 @@
 #include "protocol.h"
 #include "multicast.h"
 
+/* Set the process into the READ_MUKTICAST STATE.
+ * Now a process can send a multicast message.
+ **/
 void multicast_ready(node_status_t *ns, int id)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -57,11 +60,17 @@ static void print_v(unsigned long msg[10], unsigned long self[10], int size)
 	cout << "] " << endl;
 }
 
+/* 
+ * IS message FIFO
+ */
 bool is_fifo(unsigned long local[10], unsigned long msg[10], int id, int size)
 {
 	return (local[id] + 1) == msg[id];
 }
 
+/*
+ * IS message causal
+ */
 bool is_causal(unsigned long local[10], int self, unsigned long msg[10], int id, int size)
 {
 	bool deliver = true;
@@ -77,6 +86,9 @@ bool is_causal(unsigned long local[10], int self, unsigned long msg[10], int id,
 	return deliver;
 }
 
+/*
+ * Read sing message from multicast_recv_queue 
+ */
 app_msg_t *multicast_app_recv(node_status_t *ns)
 {
 	causal_t *ct = ns->ns_causal;
@@ -90,6 +102,9 @@ app_msg_t *multicast_app_recv(node_status_t *ns)
 	return apt;
 }
 
+/*
+ * Put a message in multicast recv queue
+ */
 void deliver_message_to_app(causal_t *ct, unsigned long msg[10], int from, unsigned long o_V[10], bool from_buf, bool causal)
 {
 	int vsize = ct->c_v_size;
@@ -107,6 +122,9 @@ void deliver_message_to_app(causal_t *ct, unsigned long msg[10], int from, unsig
 	ct->c_appq.push(apt);
 }
 
+/*
+ * Check the buffer and deliver messages in causally ordered manner
+ */
 void deliver_buffered_messages(node_status_t *ns)
 {
 	causal_t *ct = ns->ns_causal;
@@ -136,6 +154,9 @@ void deliver_buffered_messages(node_status_t *ns)
 	}
 }
 
+/*
+ * Multicast message is recived
+ */
 void mulicast_recv(node_status_t *ns, unsigned long msg[10], int id, enum msg_ordering order)
 {
 	causal_t *ct = ns->ns_causal;

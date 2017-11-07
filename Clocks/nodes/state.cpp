@@ -3,6 +3,9 @@
 #include "protocol.h"
 #include "state.h"
 
+/*
+ * recv() loop
+ */
 static void *incoming(void *ctx)
 {
 	/* Recieve */
@@ -27,6 +30,9 @@ static void *incoming(void *ctx)
 	return NULL;
 }
 
+/*
+ * Start accepting the connections from lower noeds
+ */
 static void listen_loop(c_sock *ss, node_status_t *ns)
 {
 	ns->ns_state = ON; 
@@ -51,6 +57,9 @@ static void listen_loop(c_sock *ss, node_status_t *ns)
 	}
 }
 
+/*
+ * start server on node 
+ */
 static void *listener(void *ctx)
 {
 	int rc;
@@ -100,6 +109,8 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 	int retry_t = 10;
 	unsigned long step = 1000;
 	unsigned long wi = 1000;
+	/* Sometimes nodes are not yet started */
+	/* Retry multiple time before giving up */
 	while(1) {
 		rc = bs->c_sock_connect();
 		if(rc == 0)
@@ -131,11 +142,17 @@ static void connect_to_one_boss(node_status_t *ns, node_config_t *boss)
 	send_hello_message(boss->nc_id, ns);
 }
 
+/*
+ * Connect to youself
+ */
 static void CONNECT_TO_SELF(node_status_t *ns)
 {
 	connect_to_one_boss(ns, cc_get_record(ns->ns_self->nc_id, ns->ns_cc));
 }
 
+/*
+ * Establish connection with each node higher than you
+ */
 static void CONNECT_TO_BOSSES(node_status_t *ns)
 {
 	node_config_t *self = ns->ns_self;
@@ -150,6 +167,9 @@ static void CONNECT_TO_BOSSES(node_status_t *ns)
 	}
 }
 
+/*
+ * WAIT for all nodes to connect
+ */
 static void WAIT_MC(cluster_config_t *cc, int self)
 {
 	list<node_config_t *> ll = get_list(cc);
@@ -161,6 +181,9 @@ static void WAIT_MC(cluster_config_t *cc, int self)
 
 }
 
+/*
+ * WAIT for milticast is ready. OBSOLETE
+ */
 void WAIT_MULT_READY(node_status_t *ns)
 {
 	list<node_config_t *> ll = get_list(ns->ns_cc);
@@ -199,7 +222,7 @@ void START_STATE_MC(node_status_t *ns)
 		;
 
 	/* Server started. If you are a time daemon wait for everyone else to connect.
-	 * OR connect to every process that is bigger than you.
+	 * else connect to every process that is bigger than you.
 	 **/
 	if(ns->ns_isdmon) {
 		CONNECT_TO_SELF(ns);

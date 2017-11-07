@@ -3,7 +3,9 @@
 
 /*
  * I am sure a time deamon
- * */
+ * starts a sync protocol. Sends a 
+ * clock to cliets.
+ **/
 void BERKELY_SYNC(node_status_t *ns)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -20,6 +22,10 @@ void BERKELY_SYNC(node_status_t *ns)
 	}
 }
 
+/*
+ * Called by client nodes after recieving clock-sync from
+ * server.
+ */
 void clock_sync_recieved(node_status_t *ns, clock_sync_t cst)
 {
 	cluster_config_t *cc = ns->ns_cc;
@@ -27,6 +33,9 @@ void clock_sync_recieved(node_status_t *ns, clock_sync_t cst)
 	send_time_difference(ns, cc->t_daemon, cst.clock);
 }
 
+/*
+ * Calculate the adjustment for every node.
+ */
 static void run_computations(node_status_t *ns)
 {
 	berkley_t *bmt = ns->ns_berk;
@@ -48,6 +57,9 @@ static void run_computations(node_status_t *ns)
 	}
 }
 
+/*
+ * Called by server, after it recieves a reply from client
+ */
 void berkley_clk_sync_rep(node_status_t *ns, int id, long cl_diff)
 {
 	berkley_t *bmt = ns->ns_berk;
@@ -64,6 +76,10 @@ void berkley_clk_sync_rep(node_status_t *ns, int id, long cl_diff)
 	}
 	lck.unlock();
 }
+
+/*
+ * Called by client after it recieves an adjustment from the server.
+ */
 void berkley_adjust_clock(node_status_t *ns, double adjust)
 {
 	unsigned long oclock = ns->ns_self->nc_clock;

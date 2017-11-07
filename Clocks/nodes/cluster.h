@@ -28,6 +28,9 @@ enum msg_ordering {
 	NOT_CAUSAL,
 };
 
+/*
+ * Bootstrap cluster param
+ * */
 typedef struct cluster_bootstrap_param {
 	int                cbp_id;
 	char              *cbp_nodelist;
@@ -37,6 +40,7 @@ typedef struct cluster_bootstrap_param {
 	char              *cbp_fname;
 } cluster_boot_t;
 
+/* Node configuration */
 typedef struct node_config {
 	int            nc_id;
 	enum conn_stat nc_status;
@@ -46,29 +50,13 @@ typedef struct node_config {
 	unsigned long  nc_clock;
 } node_config_t;
 
+/* Global cluster config */
 typedef struct cluster_config {
 	int t_daemon;
 	list<node_config_t *> cc_cluster;
 } cluster_config_t;
 
-/*
- * Node is a state machine. It is in one of the following state.
- * 1. OFF -> Node is not accepting connection.
- * 2. ON -> Node is accepting messages from other nodes.
- * 3. CLK_SYN_START -> Clock synchronization is begin. All message other than
- * essential to clock synchronization are ignored. Everyn node enters this state as soon as
- * they recieve syn message from time daemon.
- * 4. CLK_SYN_UPDATE -> Clock sync in progress time daemon has sent out the updated timestamp.
- *
- * STATE MACHINE: TIME DAEMON
- *
- * OFF------->ON------->WAIT---->CLK_SYNC_READY
- *           /|\                    |
- *            |                     |
- *            |                    \|/
- *     CLK_SYN_UPDATE<----------CLK_SYNC_START                           
- * */
-
+/* Node status */
 enum node_states {
 	OFF,
 	ON,
@@ -80,12 +68,14 @@ enum node_states {
 	READY_CAUSAL_MULTICAST
 };
 
+/* Berkley clock sync metadata */
 typedef struct berkley {
 	mutex          b_mx;
 	long          *b_diffs;
 	unsigned int   b_procs;
 } berkley_t;
 
+/* Buffered message */
 typedef struct buffered_multicast {
 	int bm_id;
 	bool bm_dl;
@@ -93,6 +83,7 @@ typedef struct buffered_multicast {
 	unsigned long  bm_o_V[10];
 } buffer_m_t;
 
+/* Message to be delivered to application */
 typedef struct app_msg {
 	int           app_from;
 	int           app_v_size;
@@ -103,6 +94,7 @@ typedef struct app_msg {
 	unsigned long old_V[10];
 } app_msg_t;
 
+/* Causal ordering metadata */
 typedef struct causal {
 	long               c_count;
 	unsigned long      c_v_size;
@@ -113,12 +105,14 @@ typedef struct causal {
 	queue<app_msg_t *> c_appq;
 } causal_t;
 
+/* Lock status */
 enum lock_state {
 	INIT,
 	LOCKED,
 	UNLOCKED,
 };
 
+/* Server side metadata about lock */
 typedef struct d_lock {
 	enum lock_state dl_state;
 	queue<int>      dl_requests;
@@ -139,6 +133,10 @@ typedef struct d_lock_requestor {
 	mutex               dlr_mx;
 } dlr_request_t;
 
+/*
+ * This structure is populated by each node
+ * and keeps track of node progress.
+ */
 typedef struct node_status {
 	bool              ns_isdmon;
 	enum node_states  ns_state;

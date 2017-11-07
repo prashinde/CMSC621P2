@@ -5,16 +5,16 @@
 #include "multicast.h"
 #include "state.h"
 enum msg_type {
-	HELLO = 1,
-	SEND_CLK,
-	SEND_CLK_REP,
-	UPDATE_CLK,
-	MULTICAST_RD,
-	MULTICAST,
-	LOCK_REQUEST,
-	LOCK_RELEASE,
-	LOCK_GRANTED,
-	BYE,
+	HELLO = 1, /* HELLO */
+	SEND_CLK, /* TDAEMON sends its clock */
+	SEND_CLK_REP, /* Each client sends a difference */
+	UPDATE_CLK, /* Time daemon sends a adjustment */
+	MULTICAST_RD, /* Ready multicast */
+	MULTICAST, /* Multicast message */
+	LOCK_REQUEST, /* Lock request*/
+	LOCK_RELEASE, /* Lock release */
+	LOCK_GRANTED, /* Lock granted- send by server */
+	BYE, /* BYE */
 };
 
 typedef struct hello {

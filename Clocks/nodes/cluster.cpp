@@ -23,6 +23,9 @@ static void print_cluster_config(cluster_config_t *cc)
 	cout << endl;
 }
 
+/*
+ * Bootstraps the cluster
+ * */
 node_status_t *bootstrap_cluster(cluster_boot_t *cbt)
 {
 	int           rc;
@@ -66,6 +69,7 @@ node_status_t *bootstrap_cluster(cluster_boot_t *cbt)
 		return NULL;
 	}
 
+	/* Provate metadata for time daemon */
 	if(isdaemon == 1) {
 		berkley_t *bmt = new berkley_t;
 		if(bmt == NULL) {
@@ -90,16 +94,18 @@ node_status_t *bootstrap_cluster(cluster_boot_t *cbt)
 	ns->ns_self = self;
 	ns->ns_cc = cc;
 
+	/* Initialize the server-lock metadata */
 	if(ns->ns_isdmon)
 		dl_init_lock(ns);
 
+	/* Initialize the client-lock metadata */
 	rc = dl_init_request(ns);
 	if(rc != 0) {
 		cr_log << "Distributed lock bootstrap failed..";
 		return NULL;
 	}
 
-	/* Start node's state machine. */
+	/* Start establishing communication channels . */
 	START_STATE_MC(ns);
 
 	/* ONLY Time daemon kiks the protocol */
@@ -108,8 +114,10 @@ node_status_t *bootstrap_cluster(cluster_boot_t *cbt)
 		BERKELY_SYNC(ns);
 	}
 
+	/* WAIT until node completes the protocol. */
 	while(ns->ns_state != ENTERING_MULTICAST)
 		usleep(1000);
+
 	cout << "Entered Multicast state.." << endl;	
 	print_cluster_config(cc);
 	send_mult_ready(ns);

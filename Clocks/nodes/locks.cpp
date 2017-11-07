@@ -3,6 +3,9 @@
 #include "locks.h"
 #include "logger.h"
 
+/*
+ * Client side lock metadata initialised.
+ */
 int dl_init_request(node_status_t *ns)
 {
 	dlr_request_t *lock_req;
@@ -17,6 +20,9 @@ int dl_init_request(node_status_t *ns)
 	return 0;
 }
 
+/* 
+ * Server side lock medata initialised
+ */
 int dl_init_lock(node_status_t *ns)
 {
 	d_lock_t *lock;
@@ -33,6 +39,9 @@ int dl_init_lock(node_status_t *ns)
 	return 0;
 }
 
+/*
+ * LOCK() request recieved.
+ */
 int dl_lock_req(node_status_t *ns, int id)
 {
 	d_lock_t *lock = ns->ns_lock;
@@ -51,6 +60,9 @@ int dl_lock_req(node_status_t *ns, int id)
 	return 0;
 }
 
+/*
+ * recieved unlock request
+ */
 int dl_unlock_req(node_status_t *ns, int id)
 {
 	d_lock_t *lock = ns->ns_lock;
@@ -78,6 +90,7 @@ int dl_unlock_req(node_status_t *ns, int id)
 	return 0;
 }
 
+/* Notify the lock waiter that  lock is grandted request */
 int dl_lock_granted(node_status_t *ns)
 {
 	dlr_request_t *lr = ns->ns_lock_req;
@@ -88,6 +101,9 @@ int dl_lock_granted(node_status_t *ns)
 	lck.unlock();
 }
 
+/*
+ * Application level API to acquire the lock
+ */
 int dl_lock(node_status_t *ns)
 {
 	dlr_request_t *lr = ns->ns_lock_req;
@@ -103,6 +119,9 @@ int dl_lock(node_status_t *ns)
 	return 0;
 }
 
+/*
+ * Application level API to release the lock.
+ */
 int dl_unlock(node_status_t *ns)
 {
 	cr_log << "Sending unlock request:" << ns->ns_self->nc_id << endl;
